@@ -37,6 +37,9 @@
  8. Install from requirements.txt
     >Make sure your virtual environment is active<br/>
     >pip install -r requirements.txt
+ 9. Create a file called .env inside of the server folder
+     >Inside the file, add the line: OPENAI_API_KEY=your-api-key
+     >Replace your-api-key with the actual api key
  9. Run the backend server
     >python main.py <br/>
     OR<br/>
