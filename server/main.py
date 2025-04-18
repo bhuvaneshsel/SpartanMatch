@@ -34,5 +34,20 @@ def openai():
     return completion.choices[0].message.content
 
 
+@app.route("/api/upload-resume", methods = ['POST'])
+def upload_resume():
+    resume = request.files["Resume"]
+    return "Resume recieved"
+
+
+@app.route("/api/upload-job-description", methods = ['POST'])
+def upload_job_description():
+    data = request.get_json()
+    job_description = data.get("job_description")
+
+    return job_description
+
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=8080)
