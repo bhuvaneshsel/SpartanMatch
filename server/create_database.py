@@ -24,18 +24,9 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS job_description (
 );
 """)
 
-# should we split the three scores into different tables?
 cursor.execute("""CREATE TABLE IF NOT EXISTS scores (
     session_id INT PRIMARY KEY,
-    experience_score INT,
-    experience_positives TEXT[],
-    experience_negatives TEXT[],
-    skills_score INT,
-    skills_positives TEXT[],
-    skills_negatives TEXT[],
-    structure_score INT,
-    structure_positives TEXT[],
-    structure_negatives TEXT[]
+    resume_scores JSON
 );
 """)
 
@@ -44,28 +35,6 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS resume_improvements (
     improvements JSON
 );
 """)
-
-#FOR TESTING!!!!!
-# cursor.execute("""INSERT INTO improvements (session_id, improvement, reference_text) VALUES
-# (1, 'misspelled', 'apple'),
-# (2, 'repeated word', 'banana');
-# """)
-
-with open('pdfs/resume_john.pdf', 'rb') as file1, open('pdfs/resume_alice.docx', 'rb') as file2:
-    file1_data = file1.read()
-    file2_data = file2.read()
-
-cursor.execute("""INSERT INTO resumes (session_id, file_name, file_data) VALUES
-(1, 'resume_bob.pdf', %s),
-(2, 'resume_alice.docx', %s);
-""", (file1_data, file2_data))
-
-cursor.execute("""INSERT INTO job_description (session_id, job_description) VALUES
-(1, 'move boxes'),
-(2, 'SWE');
-""")
-
-
 
 connection.commit()
 
