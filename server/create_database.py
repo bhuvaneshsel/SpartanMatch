@@ -12,8 +12,9 @@ cursor = connection.cursor()
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS resumes (
     session_id INT PRIMARY KEY,
-    file_name VARCHAR(255),
-    file_data BYTEA
+    resume_name VARCHAR(255),
+    resume_data BYTEA,
+    resume_text TEXT
 );
 """)
 
@@ -38,11 +39,9 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS scores (
 );
 """)
 
-#Shouldnt we add an imrpovement keyword to this?
-cursor.execute("""CREATE TABLE IF NOT EXISTS improvements (
+cursor.execute("""CREATE TABLE IF NOT EXISTS resume_improvements (
     session_id INT PRIMARY KEY,
-    improvement TEXT,
-    reference_text TEXT
+    improvements JSON
 );
 """)
 
