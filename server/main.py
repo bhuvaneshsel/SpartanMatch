@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import psycopg2
 from dotenv import load_dotenv, dotenv_values
 from openai import OpenAI
 import os
@@ -9,6 +10,16 @@ cors = CORS(app, origin='*')
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
+psql_password = os.getenv("PSQL_PASSWORD")
+
+def get_db_connection():
+    return psycopg2.connect(
+        host="localhost",
+        dbname="postgres",
+        user="postgres",
+        password=psql_password,
+        port=5432
+    )
 
 @app.route("/api/openai", methods = ['POST'])
 def openai():
@@ -37,7 +48,8 @@ def openai():
 @app.route("/api/upload-resume", methods = ['POST'])
 def upload_resume():
     resume = request.files["Resume"]
-    return "Resume recieved"
+
+    return resume.filename
 
 
 @app.route("/api/upload-job-description", methods = ['POST'])
@@ -46,6 +58,30 @@ def upload_job_description():
     job_description = data.get("job_description")
 
     return job_description
+
+@app.route("/api/resume-improvements", methods = ['POST'])
+def resume_improvements():
+    # -get session id (not sure how we are actually passing the session id...)
+    data = request.get_json()
+    session_id = data.get("session_id")
+
+	# -fetch resumepdf and job description from database
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT job_description FROM job_description WHERE session_id = %s", (session_id,))
+    job_desc = cursor.fetchone()
+
+    cursor.execute("SELECT file_name, file_data FROM resumes WHERE session_id = %s", (session_id,))
+    resume = cursor.fetchone()
+
+    # To test if data properly fetched from database
+    # return {
+    #     "job_description": job_desc[0],
+    #      "resume_filename": resume[0],
+    # }
+
+    return "improvements"
 
 
 
