@@ -24,18 +24,9 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS job_description (
 );
 """)
 
-# should we split the three scores into different tables?
 cursor.execute("""CREATE TABLE IF NOT EXISTS scores (
     session_id INT PRIMARY KEY,
-    experience_score INT,
-    experience_positives TEXT[],
-    experience_negatives TEXT[],
-    skills_score INT,
-    skills_positives TEXT[],
-    skills_negatives TEXT[],
-    structure_score INT,
-    structure_positives TEXT[],
-    structure_negatives TEXT[]
+    resume_scores JSON
 );
 """)
 

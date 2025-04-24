@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import psycopg2
 from dotenv import load_dotenv, dotenv_values
 from openai import OpenAI
 import psycopg2
@@ -46,7 +47,8 @@ def openai(context, prompt):
 @app.route("/api/upload-resume", methods = ['POST'])
 def upload_resume():
     resume = request.files["Resume"]
-    return "Resume recieved"
+
+    return resume.filename
 
 
 @app.route("/api/upload-job-description", methods = ['POST'])
@@ -55,6 +57,82 @@ def upload_job_description():
     job_description = data.get("job_description")
 
     return job_description
+
+@app.route("/api/resume-score", methods = ['GET'])
+def calculate_score():
+    data = request.get_json()
+    session_id = data.get("session_id")
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT session_id, resume_scores FROM scores WHERE session_id = %s", (session_id))
+    scores = cursor.fetchone()
+    if (scores):
+        return jsonify(scores)
+    else:
+        context = f"""
+        You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
+        and a job description, in  text form. You must analyze the resume based on the job descriptions.
+        Your analyses will return the following.
+        experience_score (0-100): Based on work experience and education keywords
+        skills_score (0-100): Based on soft skills and technical skills keywords
+        structure_score (0-100): Based on spelling & grammer, repetition, format, readability and keyword usage
+        For each score alos include a list of positives and negatives.
+
+        Example Output:
+        [
+            {{
+                "experience_score": 85,
+                "experience_positives": ["work experience"],
+                "experience_negatives": ["education"],
+
+                "skills_score": 100,
+                "skills_positives": ["soft skills", "technical skills"],
+                "skills_negatives": [],
+
+                "structure_score": 75,
+                "structure_positives": ["spelling & grammer", "repetition", "format"],
+                "structure_negatives": ["readability", "keyword usage"]
+            }},
+            ...
+        ]
+
+        General Guidelines:
+        1. Use ONLY the following exact labels for positives/negatives:
+            - Experience: "work experience", "education"
+            - Skills: "soft skills", "technical skills"
+            - Structure: "spelling & grammar", "repetition", "format", "readability", "keyword usage"
+        2. Do not paraphrase or summarize - only use the exact category labels
+        3. Only respond with the single JSON object, not an array and no additional comments, etc.
+        """
+
+        cursor.execute("SELECT job_description FROM job_description WHERE session_id = %s", (session_id,))
+        job_description = cursor.fetchone()[0]
+
+        cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
+        resume = cursor.fetchone()[0]
+
+        prompt = f"""
+        -RESUME-
+        {resume}
+
+        -JOB DESCIPTION-
+        {job_description}
+        """
+
+        response = openai(context, prompt)
+        json_response = json.loads(response)
+
+        cursor.execute(
+        "INSERT INTO scores (session_id, resume_scores) VALUES (%s, %s)",
+        (session_id, json.dumps(json_response)))
+     
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        return jsonify(json_response)
 
 @app.route("/api/resume-improvements", methods = ['GET'])
 def resume_improvements():
