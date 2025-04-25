@@ -4,7 +4,7 @@ import {createBrowserRouter, RouterProvider} from "react-router-dom"
 import UploadResume from './UploadResume.tsx'
 import UploadJobDescription from './UploadJobDescription.tsx'
 import ResumeScore from './ResumeScore.tsx'
-import ResumeImprovements from './ResumeImprovements.tsx'
+import ResumeImprovements from './components/ResumeImprovements/ResumeImprovements.tsx'
 
 
 const router = createBrowserRouter([

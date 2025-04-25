@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import psycopg2
 from dotenv import load_dotenv, dotenv_values
@@ -6,6 +6,7 @@ from openai import OpenAI
 import psycopg2
 import json
 import os
+import io
 
 app = Flask(__name__)
 cors = CORS(app, origin='*')
@@ -164,8 +165,9 @@ def resume_improvements():
             ...
         ]
         General Guidelines:
-        1. The referenceText must be the EXACT TEXT from the resume, character-for-character. DO not paraphrase or summarize. Do not jump between sections in the resume. 
-        2. Only respond with the JSON array and no additional comments, etc.
+        1. The referenceText must be the EXACT TEXT from the resume. If there is '/n' do not include it when giving the reference text. DO not paraphrase or summarize. Do not jump between sections in the resume. 
+        2. After including suggestions that refer to the job description, also include general resume improvement suggestions. For these, leave referenceText blank.
+        3. Only respond with the JSON array and no additional comments, etc.
         """
 
         cursor.execute("SELECT job_description FROM job_description WHERE session_id = %s", (session_id,))
@@ -195,6 +197,21 @@ def resume_improvements():
         connection.close()
     
         return jsonify(json_response)
+    
+@app.route("/api/get-resume", methods = ['GET'])
+def get_resume():
+    session_id = 1;
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT resume_data FROM resumes WHERE session_id = %s", (session_id,))
+    resume = cursor.fetchone()
+    return send_file(
+        io.BytesIO(resume[0]),
+        mimetype="application/pdf",
+        as_attachment=False,
+        download_name="resume.pdf"
+    )
 
 
 if __name__ == "__main__":
