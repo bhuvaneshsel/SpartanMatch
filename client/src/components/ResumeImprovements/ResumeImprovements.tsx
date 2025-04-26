@@ -35,6 +35,7 @@ export interface NewHighlight extends OriginalNewHighlight {
   color: string;
 }
 
+
 const getRandomColor = () => {
   const r = Math.floor(Math.random() * 256);
   const g = Math.floor(Math.random() * 256);
@@ -71,16 +72,21 @@ export default function ResumeImprovements() {
 
   const [url, setUrl] = useState("");
   const [highlights, setHighlights] = useState<Array<IHighlight>>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const fetchComments = async () => {
+    setIsLoading(true)
     const response = await axios.get("http://localhost:8080/api/resume-improvements")
     for (const i of response.data) {
       addTextHighlight(i.suggestion, i.referenceText, i.category)
     }
     console.log(response.data)
+    setIsLoading(false)
   }
 
   const fetchResume = async() => {
+    setIsLoading(true)
     const response = await axios.get("http://localhost:8080/api/get-resume", {
       responseType: "blob",
     });
@@ -272,14 +278,13 @@ export default function ResumeImprovements() {
     });
   }
   
-
   return (
     <>
       <header className="resume-improvements-header">
         <img className="logo" src={logo} alt="Logo"/>
         <h1>Resume Improvements</h1>
       </header>
-      <div className="resume-improvements-container">
+      <div className="resume-improvements-container" style={{opacity: isLoading ? 0 : 1, visibility: isLoading ? "hidden" : "visible"}}>
         <Sidebar
           highlights={highlights}
           scrollToHighlight={(highlight) => scrollViewerTo.current(highlight)}
@@ -346,6 +351,18 @@ export default function ResumeImprovements() {
           </PdfLoader>
         </div>
       </div>
+      {!isLoading && (
+        <div className="nav-buttons">
+          <button>Go Back</button>
+          <button>Start New Analysis</button>
+        </div>
+      )}
+      {isLoading && (
+        <div className="loading-container">
+          <img src="../../../public/Loading.gif"></img>
+          <p>Loading Resume Improvements...</p>
+        </div>
+      )}
     </>
   );
 }
