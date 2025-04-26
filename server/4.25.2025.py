@@ -1,11 +1,10 @@
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+import psycopg2
 from dotenv import load_dotenv, dotenv_values
 from openai import OpenAI
-import psycopg2
 import json
 import os
-import io
 import PyPDF2
 import docx
 
@@ -79,43 +78,11 @@ def extract_text(file_stream, filename):
     else:
         raise ValueError("Unsupported file format. Use PDF or DOCX.")
     
-@app.route("/api/upload-resume", methods=["POST"])
+@app.route("/api/upload-resume", methods = ['POST'])
 def upload_resume():
-    if "Resume" not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    resume = request.files["Resume"]
 
-    resume_file = request.files["Resume"]
-    session_id = request.form.get("session_id")  
-
-    if not session_id:
-        return jsonify({"error": "Missing session_id"}), 400
-
-    if resume_file.filename == "":
-        return jsonify({"error": "No file selected"}), 400
-
-    try:
-        extracted_text = extract_text(resume_file.stream, resume_file.filename)
-
-        # SAVE into DATABASE!
-        connection = get_db_connection()
-        cursor = connection.cursor()
-
-        cursor.execute(
-            "INSERT INTO resumes (session_id, resume_text) VALUES (%s, %s) ON CONFLICT (session_id) DO UPDATE SET resume_text = EXCLUDED.resume_text",
-            (session_id, extracted_text)
-        )
-
-        connection.commit()
-        cursor.close()
-        connection.close()
-
-        return jsonify({"message": "Resume uploaded and text saved successfully"}), 200
-
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": f"An error occurred: {e}"}), 500
-
+    return resume.filename
 
 
 @app.route("/api/upload-job-description", methods = ['POST'])
@@ -129,157 +96,6 @@ def upload_job_description():
 def calculate_score():
     data = request.get_json()
     session_id = data.get("session_id")
-
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT session_id, resume_scores FROM scores WHERE session_id = %s", (session_id))
-    scores = cursor.fetchone()
-    if (scores):
-        return jsonify(scores)
-    else:
-        context = f"""
-        You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
-        and a job description, in  text form. You must analyze the resume based on the job descriptions.
-        Your analyses will return the following.
-        experience_score (0-100): Based on work experience and education keywords
-        skills_score (0-100): Based on soft skills and technical skills keywords
-        structure_score (0-100): Based on spelling & grammer, repetition, format, readability and keyword usage
-        For each score alos include a list of positives and negatives.
-
-        Example Output:
-        [
-            {{
-                "experience_score": 85,
-                "experience_positives": ["work experience"],
-                "experience_negatives": ["education"],
-
-                "skills_score": 100,
-                "skills_positives": ["soft skills", "technical skills"],
-                "skills_negatives": [],
-
-                "structure_score": 75,
-                "structure_positives": ["spelling & grammer", "repetition", "format"],
-                "structure_negatives": ["readability", "keyword usage"]
-            }},
-            ...
-        ]
-
-        General Guidelines:
-        1. Use ONLY the following exact labels for positives/negatives:
-            - Experience: "work experience", "education"
-            - Skills: "soft skills", "technical skills"
-            - Structure: "spelling & grammar", "repetition", "format", "readability", "keyword usage"
-        2. Do not paraphrase or summarize - only use the exact category labels
-        3. Only respond with the single JSON object, not an array and no additional comments, etc.
-        """
-
-        cursor.execute("SELECT job_description FROM job_description WHERE session_id = %s", (session_id,))
-        job_description = cursor.fetchone()[0]
-
-        cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
-        resume = cursor.fetchone()[0]
-
-        prompt = f"""
-        -RESUME-
-        {resume}
-
-        -JOB DESCIPTION-
-        {job_description}
-        """
-
-        response = openai(context, prompt)
-        json_response = json.loads(response)
-
-        cursor.execute(
-        "INSERT INTO scores (session_id, resume_scores) VALUES (%s, %s)",
-        (session_id, json.dumps(json_response)))
-     
-        connection.commit()
-        cursor.close()
-        connection.close()
-
-        return jsonify(json_response)
-
-@app.route("/api/resume-improvements", methods = ['GET'])
-def resume_improvements():
-    session_id = 1 #hard coded for now
-
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT improvements FROM resume_improvements WHERE session_id = %s", (session_id,))
-    improvements = cursor.fetchone()
-    if (improvements):
-        return jsonify(improvements[0])
-    else:
-        context = f"""
-        You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
-        and also a job description, in  text form. You must analyze the resume based on the job descriptions and suggest improvements
-        based on the job description, but also general resume improvements.
-
-        Respond in the following format:
-        [
-            {{
-                "category": "What type of suggestion it is. Consider the categories like Experience, Skills, Structure",
-                "suggestion": "What to improve",
-                "referenceText": "Exact copy and pasted text from the resume that the suggestion refers to"
-            }},
-            {{
-                "category": "What type of suggestion it is. Consider the categories like Experience, Skills, Structure",
-                "suggestion": "What to improve",
-                "referenceText": "Exact copy and pasted text from the resume that the suggestion refers to"
-            }},
-            ...
-        ]
-        General Guidelines:
-        1. The referenceText must be the EXACT TEXT from the resume. If there is '/n' do not include it when giving the reference text. DO not paraphrase or summarize. Do not jump between sections in the resume. 
-        2. After including suggestions that refer to the job description, also include general resume improvement suggestions. For these, leave referenceText blank.
-        3. Only respond with the JSON array and no additional comments, etc.
-        """
-
-        cursor.execute("SELECT job_description FROM job_description WHERE session_id = %s", (session_id,))
-        job_description = cursor.fetchone()[0]
-
-        cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
-        resume = cursor.fetchone()[0]
-
-        prompt = f"""
-        -RESUME-
-        {resume}
-
-
-        -JOB DESCIPTION-
-        {job_description}
-        """
-
-        response = openai(context, prompt)
-        json_response = json.loads(response)
-
-        cursor.execute(
-        "INSERT INTO resume_improvements (session_id, improvements) VALUES (%s, %s)",
-        (session_id, json.dumps(json_response)))
-     
-        connection.commit()
-        cursor.close()
-        connection.close()
-    
-        return jsonify(json_response)
-    
-@app.route("/api/get-resume", methods = ['GET'])
-def get_resume():
-    session_id = 1;
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT resume_data FROM resumes WHERE session_id = %s", (session_id,))
-    resume = cursor.fetchone()
-    return send_file(
-        io.BytesIO(resume[0]),
-        mimetype="application/pdf",
-        as_attachment=False,
-        download_name="resume.pdf"
-    )
 
     connection = get_db_connection()
     cursor = connection.cursor()
