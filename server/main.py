@@ -155,10 +155,12 @@ def resume_improvements():
         Respond in the following format:
         [
             {{
+                "category": "What type of suggestion it is. Consider the categories like Experience, Skills, Structure",
                 "suggestion": "What to improve",
                 "referenceText": "Exact copy and pasted text from the resume that the suggestion refers to"
             }},
             {{
+                "category": "What type of suggestion it is. Consider the categories like Experience, Skills, Structure",
                 "suggestion": "What to improve",
                 "referenceText": "Exact copy and pasted text from the resume that the suggestion refers to"
             }},

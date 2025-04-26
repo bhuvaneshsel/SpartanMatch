@@ -31,13 +31,13 @@
     left: 0;
 } 
 
-
-
-
 .sidebar {
     width: 40vw;
+    height: 100vh;
+    overflow-y: auto;
     padding-left: 50px;
-    padding-right: 50px;
+    padding-right: 10px;
+    margin-right: 50px;
 }
 
 .sidebar-comment {
@@ -50,23 +50,42 @@
     gap: 20px;
 }
 
+.comment-description strong {
+    font-size: 1.3rem;
+    padding: 0;
+}
 .sidebar-comments {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
+
+
 .comment-description {
-    padding: 0;
+    padding: 10px 0;
     margin: 0;
     width: 100%;
-    font-size: 1.1rem;
+    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.comment-description p {
+    margin: 0;
+    padding: 4px;
 }
 
 .comment-number {
+    width: 20px;
     font-size: 1.5rem;
     font-weight: bold;
     padding: 0;
     margin: 0;
+}
 
+.comment-number p {
+    margin: 0;
+    padding: 0;
 }

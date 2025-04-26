@@ -1,4 +1,4 @@
-import type { IHighlight } from "../react-pdf-higlighter";
+import type { IHighlight } from "./ResumeImprovements";
 
 interface Props {
   highlights: Array<IHighlight>;
@@ -29,7 +29,8 @@ export function Sidebar({
               <p>{index+1}</p>
             </div>
             <div className="comment-description">
-              <p>{highlight.comment.text}</p>
+              <strong>{highlight.comment.category}</strong>
+              <p style={{ backgroundColor: highlight.color }}>{highlight.comment.text}</p>
             </div>
           </div>
         ))}

@@ -14,6 +14,7 @@ interface Props {
     text: string;
   };
   isScrolledTo: boolean;
+  color?: string
 }
 
 export function Highlight({
@@ -23,6 +24,7 @@ export function Highlight({
   onMouseOut,
   comment,
   isScrolledTo,
+  color,
 }: Props) {
   const { rects, boundingRect } = position;
 
@@ -49,7 +51,9 @@ export function Highlight({
             onClick={onClick}
             // biome-ignore lint/suspicious/noArrayIndexKey: We can use position hash at some point in future
             key={index}
-            style={rect}
+            style={{
+              ...rect,
+              backgroundColor: color || "",}}
             className={`Highlight__part ${styles.part}`}
           />
         ))}

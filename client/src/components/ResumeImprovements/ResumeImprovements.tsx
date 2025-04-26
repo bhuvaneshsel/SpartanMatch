@@ -9,13 +9,38 @@ import {
   PdfLoader,
   Popup,
 } from "../react-pdf-higlighter";
+
 import type {
-  IHighlight,
-  NewHighlight,
+  IHighlight as OriginalIHighlight,
+  NewHighlight as OriginalNewHighlight,
 } from "../react-pdf-higlighter";
 
 import { Sidebar } from "./Sidebar";
 
+export interface IHighlight extends OriginalIHighlight {
+  comment: {
+    text: string;
+    emoji: string;
+    category?: string;
+  };
+  color: string;
+}
+
+export interface NewHighlight extends OriginalNewHighlight {
+  comment: {
+    text: string;
+    emoji: string;
+    category?: string;
+  };
+  color: string;
+}
+
+const getRandomColor = () => {
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
+  return `rgba(${r}, ${g}, ${b}, 0.5)`;
+}
 
 
 
@@ -50,7 +75,7 @@ export default function ResumeImprovements() {
   const fetchComments = async () => {
     const response = await axios.get("http://localhost:8080/api/resume-improvements")
     for (const i of response.data) {
-      addTextHighlight(i.suggestion, i.referenceText)
+      addTextHighlight(i.suggestion, i.referenceText, i.category)
     }
     console.log(response.data)
   }
@@ -92,7 +117,7 @@ export default function ResumeImprovements() {
 
   const addHighlight = (highlight: NewHighlight) => {
     setHighlights((prevHighlights) => [
-      { ...highlight, id: getNextId() },
+      { ...highlight, id: getNextId(),},
       ...prevHighlights,
     ]);
   };
@@ -113,7 +138,7 @@ export default function ResumeImprovements() {
   }, []);
 
   
-  const addTextHighlight = (comment, referenceText) => {
+  const addTextHighlight = (comment, referenceText, category) => {
 
     if (referenceText === "") {
       console.log("Reference text not found")
@@ -131,7 +156,8 @@ export default function ResumeImprovements() {
           rects: [],
           pageNumber: 1,
         },
-        comment: { text: comment, emoji: "" }
+        comment: { text: comment, emoji: "", category: category, },
+        color: "",
       });
       return;
     }
@@ -167,7 +193,8 @@ export default function ResumeImprovements() {
           rects: [],
           pageNumber: 1,
         },
-        comment: { text: comment, emoji: "" }
+        comment: { text: comment, emoji: "", category: category },
+        color: ""
       });
 
       return;
@@ -240,7 +267,8 @@ export default function ResumeImprovements() {
         rects,
         pageNumber: 1
       },
-      comment: { text: comment, emoji: "" }
+      comment: { text: comment, emoji: "", category: category },
+      color: getRandomColor(),
     });
   }
   
@@ -296,6 +324,7 @@ export default function ResumeImprovements() {
                       isScrolledTo={isScrolledTo}
                       position={highlight.position}
                       comment={highlight.comment}
+                      color={highlight.color}
                     />
                   ) 
                   return (
