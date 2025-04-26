@@ -54,10 +54,44 @@ def upload_resume():
 
 @app.route("/api/upload-job-description", methods = ['POST'])
 def upload_job_description():
-    data = request.get_json()
-    job_description = data.get("job_description")
+    session_id = 1 #hard coded for now should get session ID from cookie
 
-    return job_description
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    
+    #Check if resume exists in table, if no resume return error
+    cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
+    resume_text = cursor.fetchone()
+    if not (resume_text):
+        return jsonify({"error": f"No resume found for session_id {session_id}."}), 500
+    else:
+        data = request.get_json()
+        job_description = data.get("job_description")
+
+        #Insert job_description into db with session_id. If a row shares this session_id replace its job_description
+        cursor.execute("""
+            INSERT INTO job_description (session_id, job_description)
+            VALUES (%s, %s)
+            ON CONFLICT (session_id)
+            DO UPDATE SET job_description = EXCLUDED.job_description;
+        """, (session_id, job_description))
+
+        #Delete rows from scores and resume_improvements DB that share the session_id
+        cursor.execute("""
+            DELETE FROM scores
+            WHERE session_id = %s;
+        """, (session_id,))
+
+        cursor.execute("""
+            DELETE FROM resume_improvements
+            WHERE session_id = %s;
+        """, (session_id,))
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        return "Success!"
 
 @app.route("/api/resume-score", methods = ['GET'])
 def calculate_score():
@@ -67,7 +101,7 @@ def calculate_score():
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    cursor.execute("SELECT session_id, resume_scores FROM scores WHERE session_id = %s", (session_id))
+    cursor.execute("SELECT session_id, resume_scores FROM scores WHERE session_id = %s", (session_id,))
     scores = cursor.fetchone()
     if (scores):
         return jsonify(scores)
@@ -199,22 +233,6 @@ def resume_improvements():
         connection.close()
     
         return jsonify(json_response)
-    
-@app.route("/api/get-resume", methods = ['GET'])
-def get_resume():
-    session_id = 1;
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT resume_data FROM resumes WHERE session_id = %s", (session_id,))
-    resume = cursor.fetchone()
-    return send_file(
-        io.BytesIO(resume[0]),
-        mimetype="application/pdf",
-        as_attachment=False,
-        download_name="resume.pdf"
-    )
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=8080)
