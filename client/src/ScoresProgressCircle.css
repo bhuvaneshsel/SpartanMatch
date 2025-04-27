@@ -1,0 +1,36 @@
+.segmented-progresscircle {
+    position: relative;
+    display: inline-block;
+  }
+  .segmented-progresscircle svg {
+    width: 160px;
+    height: 160px;
+  }
+  .segmented-progresscircle circle {
+    fill: transparent;
+  }
+  .segmented-progresscircle__circles {
+    transform: rotate(-90deg);
+  }
+  .segmented-progresscircle__circles__progress-dashes {
+    stroke-linecap: round;
+    /* stroke: #19e27a; */
+  }
+  .segmented-progresscircle__circles__background-dashes {
+    stroke-linecap: round;
+    stroke: #aaa;
+    stroke-dasharray: 27 10 27 10 27 10 27 10 27 10 27 10 27 10 27 10 27 10 27
+      1000;
+  }
+  .segmented-progresscircle__text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: 1;
+    text-align: center;
+    font-size: 30px;
+    color: black;
+  }
