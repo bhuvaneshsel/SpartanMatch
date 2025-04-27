@@ -1,13 +1,12 @@
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
-from dotenv import load_dotenv, dotenv_values
+from dotenv import load_dotenv
 from openai import OpenAI
 import psycopg2
 import json
 import os
 import io
 import PyPDF2
-import docx
 
 app = Flask(__name__)
 cors = CORS(app, origin='*')
@@ -33,11 +32,10 @@ def openai(context, prompt):
         model="gpt-4o",
         messages=[
             {"role": "system", "content": context
-            },
-            {
-                "role": "user",
-                "content": prompt,
-            },
+             },
+            {"role": "user", 
+             "content": prompt
+             },
         ],
     )
     response = completion.choices[0].message.content
@@ -57,27 +55,11 @@ def extract_text_from_pdf(file_stream):
         print(f"[PDF ERROR] {e}")
     return text
 
-def extract_text_from_docx(file_stream):
-    text = ""
-    try:
-        doc = docx.Document(file_stream)
-        for para in doc.paragraphs:
-            text += para.text + "\n"
-        for table in doc.tables:
-            for row in table.rows:
-                for cell in row.cells:
-                    text += cell.text + "\n"
-    except Exception as e:
-        print(f"[DOCX ERROR] {e}")
-    return text
-
 def extract_text(file_stream, filename):
     if filename.lower().endswith('.pdf'):
         return extract_text_from_pdf(file_stream)
-    elif filename.lower().endswith('.docx'):
-        return extract_text_from_docx(file_stream)
     else:
-        raise ValueError("Unsupported file format. Use PDF or DOCX.")
+        raise ValueError("Unsupported file format. Use PDF only.")
     
 @app.route("/api/upload-resume", methods=["POST"])
 def upload_resume():
@@ -93,182 +75,64 @@ def upload_resume():
     if resume_file.filename == "":
         return jsonify({"error": "No file selected"}), 400
 
-    try:
-        extracted_text = extract_text(resume_file.stream, resume_file.filename)
+    if not resume_file.filename.lower().endswith('.pdf'):
+        return jsonify({"error": "Only PDF files are supported"}), 400
 
-        # SAVE into DATABASE!
+    try:
+        
+        extracted_text = extract_text(resume_file.stream, resume_file.filename)
+        
+        resume_file.stream.seek(0)
+        pdf_content = resume_file.stream.read()
+
         connection = get_db_connection()
         cursor = connection.cursor()
 
         cursor.execute(
-            "INSERT INTO resumes (session_id, resume_text) VALUES (%s, %s) ON CONFLICT (session_id) DO UPDATE SET resume_text = EXCLUDED.resume_text",
-            (session_id, extracted_text)
+            "INSERT INTO resumes (session_id, resume_text, resume_data) VALUES (%s, %s, %s) ON CONFLICT (session_id) DO UPDATE SET resume_text = EXCLUDED.resume_text, resume_data = EXCLUDED.resume_data",
+            (session_id, extracted_text, psycopg2.Binary(pdf_content))
         )
 
         connection.commit()
         cursor.close()
         connection.close()
 
-        return jsonify({"message": "Resume uploaded and text saved successfully"}), 200
+        return jsonify({"message": "Resume uploaded and saved successfully"}), 200
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"An error occurred: {e}"}), 500
 
-
-
-@app.route("/api/upload-job-description", methods = ['POST'])
+@app.route("/api/upload-job-description", methods=['POST'])
 def upload_job_description():
     data = request.get_json()
     job_description = data.get("job_description")
-
-    return job_description
-
-@app.route("/api/resume-score", methods = ['GET'])
-def calculate_score():
-    data = request.get_json()
     session_id = data.get("session_id")
-
+    
+    if not job_description:
+        return jsonify({"error": "job_description"}), 400
+    
+    
     connection = get_db_connection()
     cursor = connection.cursor()
-
-    cursor.execute("SELECT session_id, resume_scores FROM scores WHERE session_id = %s", (session_id))
-    scores = cursor.fetchone()
-    if (scores):
-        return jsonify(scores)
-    else:
-        context = f"""
-        You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
-        and a job description, in  text form. You must analyze the resume based on the job descriptions.
-        Your analyses will return the following.
-        experience_score (0-100): Based on work experience and education keywords
-        skills_score (0-100): Based on soft skills and technical skills keywords
-        structure_score (0-100): Based on spelling & grammer, repetition, format, readability and keyword usage
-        For each score alos include a list of positives and negatives.
-
-        Example Output:
-        [
-            {{
-                "experience_score": 85,
-                "experience_positives": ["work experience"],
-                "experience_negatives": ["education"],
-
-                "skills_score": 100,
-                "skills_positives": ["soft skills", "technical skills"],
-                "skills_negatives": [],
-
-                "structure_score": 75,
-                "structure_positives": ["spelling & grammer", "repetition", "format"],
-                "structure_negatives": ["readability", "keyword usage"]
-            }},
-            ...
-        ]
-
-        General Guidelines:
-        1. Use ONLY the following exact labels for positives/negatives:
-            - Experience: "work experience", "education"
-            - Skills: "soft skills", "technical skills"
-            - Structure: "spelling & grammar", "repetition", "format", "readability", "keyword usage"
-        2. Do not paraphrase or summarize - only use the exact category labels
-        3. Only respond with the single JSON object, not an array and no additional comments, etc.
-        """
-
-        cursor.execute("SELECT job_description FROM job_description WHERE session_id = %s", (session_id,))
-        job_description = cursor.fetchone()[0]
-
-        cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
-        resume = cursor.fetchone()[0]
-
-        prompt = f"""
-        -RESUME-
-        {resume}
-
-        -JOB DESCIPTION-
-        {job_description}
-        """
-
-        response = openai(context, prompt)
-        json_response = json.loads(response)
-
-        cursor.execute(
-        "INSERT INTO scores (session_id, resume_scores) VALUES (%s, %s)",
-        (session_id, json.dumps(json_response)))
-     
-        connection.commit()
-        cursor.close()
-        connection.close()
-
-        return jsonify(json_response)
-
-@app.route("/api/resume-improvements", methods = ['GET'])
-def resume_improvements():
-    session_id = 1 #hard coded for now
-
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT improvements FROM resume_improvements WHERE session_id = %s", (session_id,))
-    improvements = cursor.fetchone()
-    if (improvements):
-        return jsonify(improvements[0])
-    else:
-        context = f"""
-        You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
-        and also a job description, in  text form. You must analyze the resume based on the job descriptions and suggest improvements
-        based on the job description, but also general resume improvements.
-
-        Respond in the following format:
-        [
-            {{
-                "category": "What type of suggestion it is. Consider the categories like Experience, Skills, Structure",
-                "suggestion": "What to improve",
-                "referenceText": "Exact copy and pasted text from the resume that the suggestion refers to"
-            }},
-            {{
-                "category": "What type of suggestion it is. Consider the categories like Experience, Skills, Structure",
-                "suggestion": "What to improve",
-                "referenceText": "Exact copy and pasted text from the resume that the suggestion refers to"
-            }},
-            ...
-        ]
-        General Guidelines:
-        1. The referenceText must be the EXACT TEXT from the resume. If there is '/n' do not include it when giving the reference text. DO not paraphrase or summarize. Do not jump between sections in the resume. 
-        2. After including suggestions that refer to the job description, also include general resume improvement suggestions. For these, leave referenceText blank.
-        3. Only respond with the JSON array and no additional comments, etc.
-        """
-
-        cursor.execute("SELECT job_description FROM job_description WHERE session_id = %s", (session_id,))
-        job_description = cursor.fetchone()[0]
-
-        cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
-        resume = cursor.fetchone()[0]
-
-        prompt = f"""
-        -RESUME-
-        {resume}
-
-
-        -JOB DESCIPTION-
-        {job_description}
-        """
-
-        response = openai(context, prompt)
-        json_response = json.loads(response)
-
-        cursor.execute(
-        "INSERT INTO resume_improvements (session_id, improvements) VALUES (%s, %s)",
-        (session_id, json.dumps(json_response)))
-     
-        connection.commit()
-        cursor.close()
-        connection.close()
+        
+    cursor.execute(
+            "INSERT INTO job_description (session_id, job_description) VALUES (%s, %s) ON CONFLICT (session_id) DO UPDATE SET job_description = EXCLUDED.job_description",
+            (session_id, job_description)
+    )
+        
+    connection.commit()
+    cursor.close()
+    connection.close()
+        
+    return jsonify({"message": "Job description saved successfully"}), 200
     
-        return jsonify(json_response)
-    
-@app.route("/api/get-resume", methods = ['GET'])
+
+@app.route("/api/get-resume", methods=['GET'])
+
 def get_resume():
-    session_id = 1;
+    session_id = request.args.get("session_id", 1)
     connection = get_db_connection()
     cursor = connection.cursor()
 
@@ -281,40 +145,45 @@ def get_resume():
         download_name="resume.pdf"
     )
 
+@app.route("/api/resume-score", methods=['GET'])
+def calculate_score():
+    data = request.get_json()
+    session_id = data.get("session_id", 1)  
+
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    cursor.execute("SELECT session_id, resume_scores FROM scores WHERE session_id = %s", (session_id))
+    cursor.execute("SELECT resume_scores FROM scores WHERE session_id = %s", (session_id,))
     scores = cursor.fetchone()
-    if (scores):
-        return jsonify(scores)
+    
+    if scores:
+        cursor.close()
+        connection.close()
+        return jsonify(json.loads(scores[0]))
     else:
-        context = f"""
+        context = """
         You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
-        and a job description, in  text form. You must analyze the resume based on the job descriptions.
+        and a job description, in text form. You must analyze the resume based on the job descriptions.
         Your analyses will return the following.
         experience_score (0-100): Based on work experience and education keywords
         skills_score (0-100): Based on soft skills and technical skills keywords
-        structure_score (0-100): Based on spelling & grammer, repetition, format, readability and keyword usage
-        For each score alos include a list of positives and negatives.
+        structure_score (0-100): Based on spelling & grammar, repetition, format, readability and keyword usage
+        For each score also include a list of positives and negatives.
 
         Example Output:
-        [
-            {{
-                "experience_score": 85,
-                "experience_positives": ["work experience"],
-                "experience_negatives": ["education"],
+        {
+            "experience_score": 85,
+            "experience_positives": ["work experience"],
+            "experience_negatives": ["education"],
 
-                "skills_score": 100,
-                "skills_positives": ["soft skills", "technical skills"],
-                "skills_negatives": [],
+            "skills_score": 100,
+            "skills_positives": ["soft skills", "technical skills"],
+            "skills_negatives": [],
 
-                "structure_score": 75,
-                "structure_positives": ["spelling & grammer", "repetition", "format"],
-                "structure_negatives": ["readability", "keyword usage"]
-            }},
-            ...
-        ]
+            "structure_score": 75,
+            "structure_positives": ["spelling & grammar", "repetition", "format"],
+            "structure_negatives": ["readability", "keyword usage"]
+        }
 
         General Guidelines:
         1. Use ONLY the following exact labels for positives/negatives:
@@ -322,20 +191,30 @@ def get_resume():
             - Skills: "soft skills", "technical skills"
             - Structure: "spelling & grammar", "repetition", "format", "readability", "keyword usage"
         2. Do not paraphrase or summarize - only use the exact category labels
-        3. Only respond with the single JSON object, not an array and no additional comments, etc.
+        3. Only respond with the single JSON object, no additional comments, etc.
         """
 
         cursor.execute("SELECT job_description FROM job_description WHERE session_id = %s", (session_id,))
-        job_description = cursor.fetchone()[0]
+        job_desc_result = cursor.fetchone()
+        if not job_desc_result:
+            cursor.close()
+            connection.close()
+            return jsonify({"error": "Job description not found"}), 404
+        job_description = job_desc_result[0]
 
         cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
-        resume = cursor.fetchone()[0]
+        resume_result = cursor.fetchone()
+        if not resume_result:
+            cursor.close()
+            connection.close()
+            return jsonify({"error": "Resume not found"}), 404
+        resume = resume_result[0]
 
         prompt = f"""
         -RESUME-
         {resume}
 
-        -JOB DESCIPTION-
+        -JOB DESCRIPTION-
         {job_description}
         """
 
@@ -343,8 +222,9 @@ def get_resume():
         json_response = json.loads(response)
 
         cursor.execute(
-        "INSERT INTO scores (session_id, resume_scores) VALUES (%s, %s)",
-        (session_id, json.dumps(json_response)))
+            "INSERT INTO scores (session_id, resume_scores) VALUES (%s, %s)",
+            (session_id, json.dumps(json_response))
+        )
      
         connection.commit()
         cursor.close()
@@ -352,52 +232,67 @@ def get_resume():
 
         return jsonify(json_response)
 
-@app.route("/api/resume-improvements", methods = ['GET'])
+@app.route("/api/resume-improvements", methods=['GET'])
 def resume_improvements():
-    session_id = 1 #hard coded for now
+    session_id = request.args.get("session_id", 1)  
 
     connection = get_db_connection()
     cursor = connection.cursor()
 
     cursor.execute("SELECT improvements FROM resume_improvements WHERE session_id = %s", (session_id,))
     improvements = cursor.fetchone()
-    if (improvements):
-        return jsonify(improvements[0])
+    
+    if improvements:
+        cursor.close()
+        connection.close()
+        return jsonify(json.loads(improvements[0]))
     else:
-        context = f"""
+        context = """
         You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
-        and also a job description, in  text form. You must analyze the resume based on the job descriptions and suggest improvements
+        and also a job description, in text form. You must analyze the resume based on the job descriptions and suggest improvements
         based on the job description, but also general resume improvements.
 
         Respond in the following format:
         [
-            {{
+            {
+                "category": "What type of suggestion it is. Consider the categories like Experience, Skills, Structure",
                 "suggestion": "What to improve",
                 "referenceText": "Exact copy and pasted text from the resume that the suggestion refers to"
-            }},
-            {{
+            },
+            {
+                "category": "What type of suggestion it is. Consider the categories like Experience, Skills, Structure",
                 "suggestion": "What to improve",
                 "referenceText": "Exact copy and pasted text from the resume that the suggestion refers to"
-            }},
-            ...
+            }
         ]
+        
         General Guidelines:
-        1. The referenceText must be the EXACT TEXT from the resume, character-for-character. DO not paraphrase or summarize. Do not jump between sections in the resume. 
-        2. Only respond with the JSON array and no additional comments, etc.
+        1. The referenceText must be the EXACT TEXT from the resume. If there is '/n' do not include it when giving the reference text. DO not paraphrase or summarize. Do not jump between sections in the resume. 
+        2. After including suggestions that refer to the job description, also include general resume improvement suggestions. For these, leave referenceText blank.
+        3. Only respond with the JSON array and no additional comments, etc.
         """
 
         cursor.execute("SELECT job_description FROM job_description WHERE session_id = %s", (session_id,))
-        job_description = cursor.fetchone()[0]
+        job_desc_result = cursor.fetchone()
+        if not job_desc_result:
+            cursor.close()
+            connection.close()
+            return jsonify({"error": "Job description not found"}), 404
+        job_description = job_desc_result[0]
 
         cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
-        resume = cursor.fetchone()[0]
+        resume_result = cursor.fetchone()
+        if not resume_result:
+            cursor.close()
+            connection.close()
+            return jsonify({"error": "Resume not found"}), 404
+        resume = resume_result[0]
 
         prompt = f"""
         -RESUME-
         {resume}
 
-
-        -JOB DESCIPTION-
+        -JOB DESCRIPTION-
         {job_description}
         """
 
@@ -405,8 +300,9 @@ def resume_improvements():
         json_response = json.loads(response)
 
         cursor.execute(
-        "INSERT INTO resume_improvements (session_id, improvements) VALUES (%s, %s)",
-        (session_id, json.dumps(json_response)))
+            "INSERT INTO resume_improvements (session_id, improvements) VALUES (%s, %s)",
+            (session_id, json.dumps(json_response))
+        )
      
         connection.commit()
         cursor.close()
@@ -416,7 +312,6 @@ def resume_improvements():
 
 @app.route("/api/extract-text", methods=["POST"])
 def extract_text_endpoint():
-    
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
@@ -424,6 +319,9 @@ def extract_text_endpoint():
 
     if file.filename == "":
         return jsonify({"error": "No file selected"}), 400
+
+    if not file.filename.lower().endswith('.pdf'):
+        return jsonify({"error": "Only PDF files are supported"}), 400
 
     try:
         extracted_text = extract_text(file.stream, file.filename)
