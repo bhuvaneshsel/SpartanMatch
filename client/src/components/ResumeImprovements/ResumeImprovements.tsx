@@ -2,86 +2,43 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./ResumeImprovements.css";
 import logo from "../../../public/logo.png"
 import axios from 'axios';
+import {pdfjs } from "react-pdf";
+import { Document, Page } from 'react-pdf';
 
-import {
-  Highlight,
-  PdfHighlighter,
-  PdfLoader,
-  Popup,
-} from "../react-pdf-higlighter";
 
-import type {
-  IHighlight as OriginalIHighlight,
-  NewHighlight as OriginalNewHighlight,
-} from "../react-pdf-higlighter";
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
 import { Sidebar } from "./Sidebar";
-
-export interface IHighlight extends OriginalIHighlight {
-  comment: {
-    text: string;
-    emoji: string;
-    category?: string;
-  };
-  color: string;
-}
-
-export interface NewHighlight extends OriginalNewHighlight {
-  comment: {
-    text: string;
-    emoji: string;
-    category?: string;
-  };
-  color: string;
-}
-
-
-const getRandomColor = () => {
-  const r = Math.floor(Math.random() * 256);
-  const g = Math.floor(Math.random() * 256);
-  const b = Math.floor(Math.random() * 256);
-  return `rgba(${r}, ${g}, ${b}, 0.5)`;
-}
-
-
-
-const getNextId = () => String(Math.random()).slice(2); //creates new unique ID
-
-const parseIdFromHash = () =>
-  document.location.hash.slice("#highlight-".length);
-
-const resetHash = () => {
-  document.location.hash = "";
-};
-
-const HighlightPopup = ({ //if the highlight has a comment ,it displays this
-  comment,
-}: {
-  comment: { text: string; emoji: string };
-}) =>
-  comment.text ? (
-    <div className="Highlight__popup">
-      {comment.emoji} {comment.text}
-    </div>
-  ) : null;
 
 
 
 export default function ResumeImprovements() {
-  const searchParams = new URLSearchParams(document.location.search);
+
+  const [numPages, setNumPages] = useState<number>();
+  const [pageNumber, setPageNumber] = useState<number>(1);
+
+
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
+    setNumPages(numPages);
+  }
 
   const [url, setUrl] = useState("");
-  const [highlights, setHighlights] = useState<Array<IHighlight>>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [improvements, setImprovements] = useState([])
 
 
-  const fetchComments = async () => {
+  const fetchImprovements = async () => {
     setIsLoading(true)
-    const response = await axios.get("http://localhost:8080/api/resume-improvements")
-    for (const i of response.data) {
-      addTextHighlight(i.suggestion, i.referenceText, i.category)
-    }
+    const fullText = getResumeText();
+    const response = await axios.post("http://localhost:8080/api/resume-improvements", 
+      { fullText: fullText },
+      { withCredentials: true }
+    )
     console.log(response.data)
+    setImprovements(response.data);
     setIsLoading(false)
   }
 
@@ -89,44 +46,13 @@ export default function ResumeImprovements() {
     setIsLoading(true)
     const response = await axios.get("http://localhost:8080/api/get-resume", {
       responseType: "blob",
+      withCredentials: true,
     });
 
     const blob = response.data;
     const url = URL.createObjectURL(blob);
     setUrl(url)
   }
-
-
-  const scrollViewerTo = useRef((highlight: IHighlight) => {});
-
-  const scrollToHighlightFromHash = useCallback(() => {
-    const highlight = getHighlightById(parseIdFromHash());
-    if (highlight) {
-      scrollViewerTo.current(highlight);
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("hashchange", scrollToHighlightFromHash, false);
-    return () => {
-      window.removeEventListener(
-        "hashchange",
-        scrollToHighlightFromHash,
-        false,
-      );
-    };
-  }, [scrollToHighlightFromHash]);
-
-  const getHighlightById = (id: string) => {
-    return highlights.find((highlight) => highlight.id === id);
-  };
-
-  const addHighlight = (highlight: NewHighlight) => {
-    setHighlights((prevHighlights) => [
-      { ...highlight, id: getNextId(),},
-      ...prevHighlights,
-    ]);
-  };
 
   useEffect(() => {
 
@@ -136,37 +62,15 @@ export default function ResumeImprovements() {
     loadResume();
 
     const findTextHighlights = () => {
-      fetchComments();
+      fetchImprovements();
     }
     const timeout = setTimeout(findTextHighlights, 3000);
- 
     return () => clearTimeout(timeout);
+   
   }, []);
 
   
-  const addTextHighlight = (comment, referenceText, category) => {
-
-    if (referenceText === "") {
-      console.log("Reference text not found")
-      addHighlight({
-        content: { text: "No reference text" },
-        position: {
-          boundingRect: {
-            x1: 0,
-            y1: 0,
-            x2: 0,
-            y2: 0,
-            width: 0,
-            height: 0,
-          },
-          rects: [],
-          pageNumber: 1,
-        },
-        comment: { text: comment, emoji: "", category: category, },
-        color: "",
-      });
-      return;
-    }
+  const getResumeText = () => {
     const spanElements = Array.from(document.querySelectorAll(".textLayer span[role='presentation']"));
 
     let fullText = "";
@@ -177,185 +81,29 @@ export default function ResumeImprovements() {
       const endIndex = fullText.length;
       return {span, startIndex, endIndex}
     })
+    return fullText;
 
-
-
-    const referenceTextStart = fullText.toLowerCase().indexOf(referenceText.toLowerCase())
-    const referenceTextEnd = referenceTextStart + referenceText.length;
-
-    if (referenceTextStart === -1) {
-      console.log("Reference text not found")
-      addHighlight({
-        content: { text: referenceText },
-        position: {
-          boundingRect: {
-            x1: 0,
-            y1: 0,
-            x2: 0,
-            y2: 0,
-            width: 0,
-            height: 0,
-          },
-          rects: [],
-          pageNumber: 1,
-        },
-        comment: { text: comment, emoji: "", category: category },
-        color: ""
-      });
-
-      return;
-    }
-
-    const highlightSpans = spanIndexArray.filter(({startIndex, endIndex}) => {
-      return endIndex > referenceTextStart && startIndex < referenceTextEnd;
-    })
-
-    const highlightGroups = []
-
-    const allRects = highlightSpans.map(({span}) => {
-      const spanElement = span.getBoundingClientRect();
-      const resumeElement = span.closest(".page") as HTMLElement;
-      const resumeContainer = resumeElement.getBoundingClientRect();
-
-      const x1 = spanElement.left - resumeContainer.left;
-      const y1 = spanElement.top - resumeContainer.top;
-      const x2 = spanElement.right - resumeContainer.left;
-      const y2 = spanElement.bottom - resumeContainer.top;
-      const width = resumeElement.offsetWidth;
-      const height = resumeElement.offsetHeight;
-
-      const rect = {x1, y1, x2, y2, width, height};
-
-      const highlightGroup = highlightGroups.find(({x1,thatY1,x2,y2,width,height}) => {
-        return thatY1 - y1 < 3
-      })
-      if (highlightGroup) {
-        highlightGroup.push(rect)
-      }
-      else {
-        highlightGroups.push([rect])
-      }
-    })
-
-    if (allRects.length === 0) {
-      console.log("No matching spans found.");
-      return;
-    }
-
-    const rects = highlightGroups.map((group) => {
-      const x1 = Math.min(...group.map(r => r.x1));
-      const y1 = Math.min(...group.map(r => r.y1));
-      const x2 = Math.max(...group.map(r => r.x2));
-      const y2 = Math.max(...group.map(r => r.y2));
-      return {
-        x1,
-        y1,
-        x2,
-        y2,
-        width: group[0].width,
-        height: group[0].height
-      };
-    });
-
-    const boundingRect = {
-      x1: Math.min(...rects.map(r => r.x1)),
-      y1: Math.min(...rects.map(r => r.y1)),
-      x2: Math.max(...rects.map(r => r.x2)),
-      y2: Math.max(...rects.map(r => r.y2)),
-      width: rects[0].width,
-      height: rects[0].height,
-    };
-
-    addHighlight({
-      content: { text: referenceText },
-      position: {
-        boundingRect,
-        rects,
-        pageNumber: 1
-      },
-      comment: { text: comment, emoji: "", category: category },
-      color: getRandomColor(),
-    });
   }
-  
   return (
     <>
       <header className="resume-improvements-header">
         <img className="logo" src={logo} alt="Logo"/>
         <h1>Resume Improvements</h1>
       </header>
-      <div className="resume-improvements-container" style={{opacity: isLoading ? 0 : 1, visibility: isLoading ? "hidden" : "visible"}}>
-        <Sidebar
-          highlights={highlights}
-          scrollToHighlight={(highlight) => scrollViewerTo.current(highlight)}
-        />
-        <div
-          style={{
-            height: "100vh",
-            width: "50vw",
-            position: "relative",
-          }}
-        >
-          <PdfLoader url={url} beforeLoad="">
-            {(pdfDocument) => (
-              <PdfHighlighter
-                pdfDocument={pdfDocument}
-                enableAreaSelection={(event) => false}
-                onScrollChange={resetHash}
-                scrollRef={(scrollTo) => {
-                  scrollViewerTo.current = scrollTo;
-                  scrollToHighlightFromHash();
-                }}
-                onSelectionFinished={(
-                  position,
-                  content,
-                  hideTipAndSelection,
-                  transformSelection,
-                ) => (
-                  null
-                )}
-                highlightTransform={(
-                  highlight,
-                  index,
-                  setTip,
-                  hideTip,
-                  viewportToScaled,
-                  screenshot,
-                  isScrolledTo,
-                ) => {
-                
-                  const component = (
-                    <Highlight
-                      isScrolledTo={isScrolledTo}
-                      position={highlight.position}
-                      comment={highlight.comment}
-                      color={highlight.color}
-                    />
-                  ) 
-                  return (
-                    <Popup
-                      popupContent={<HighlightPopup {...highlight} />}
-                      onMouseOver={(popupContent) =>
-                        setTip(highlight, (highlight) => popupContent)
-                      }
-                      onMouseOut={hideTip}
-                      key={index}
-                    >
-                      {component}
-                    </Popup>
-                  );
-                }}
-                highlights={highlights}
-              />
-            )}
-          </PdfLoader>
-        </div>
-      </div>
       {!isLoading && (
-        <div className="nav-buttons">
-          <button>Go Back</button>
-          <button>Start New Analysis</button>
-        </div>
+        <>
+          <div className="resume-improvements-container">
+            <Sidebar improvements={improvements}/>
+            <Document file={url} onLoadSuccess={onDocumentLoadSuccess} >
+              <Page pageNumber={pageNumber} renderTextLayer={false} renderAnnotationLayer={false}/>
+            </Document>
+          </div> 
+          <div className="nav-buttons">
+            <button>Go Back</button>
+            <button>Start New Analysis</button>
+          </div>
+       
+        </>
       )}
       {isLoading && (
         <div className="loading-container">

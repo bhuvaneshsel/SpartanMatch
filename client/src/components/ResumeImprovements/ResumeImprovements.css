@@ -1,6 +1,7 @@
 .resume-improvements-container {
     display: flex;
-    height: 100vh;
+    justify-content: center;
+    gap: 50px;
     background-color: #E5A823;
 }
 
@@ -35,9 +36,6 @@
     width: 40vw;
     height: 100vh;
     overflow-y: auto;
-    padding-left: 50px;
-    padding-right: 10px;
-    margin-right: 50px;
 }
 
 .sidebar-comment {
@@ -125,3 +123,28 @@
     font-size: 1.5rem;
     color: #0055A2;
 }
+
+.comment-suggestion {
+    font-size: 1.3rem;
+}
+
+.comment-reference-text {
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 800px) {
+    .resume-improvements-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 50px;
+        background-color: #E5A823;
+    }
+
+    .sidebar {
+        width: 90vw;
+    }
+
+}
+
