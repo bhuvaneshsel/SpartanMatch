@@ -29,7 +29,7 @@ def get_db_connection():
     )
 
 def openai(context, prompt):
-
+   
     client = OpenAI(api_key=api_key)
 
     completion = client.chat.completions.create(
@@ -168,6 +168,7 @@ def upload_job_description():
 @app.route("/api/get-resume", methods=['GET'])
 def get_resume():
     session_id = request.cookies.get("session_id")
+    print(session_id)
 
     connection = get_db_connection()
     cursor = connection.cursor()
@@ -268,9 +269,10 @@ def calculate_score():
 
         return jsonify(json_response), 200
 
-@app.route("/api/resume-improvements", methods=['GET'])
+@app.route("/api/resume-improvements", methods=['POST'])
 def resume_improvements():
     session_id = request.cookies.get("session_id")
+
 
     connection = get_db_connection()
     cursor = connection.cursor()
@@ -281,7 +283,7 @@ def resume_improvements():
     if improvements:
         cursor.close()
         connection.close()
-        return jsonify(json.loads(improvements[0]))
+        return jsonify(improvements[0]), 200
     else:
         context = """
         You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
