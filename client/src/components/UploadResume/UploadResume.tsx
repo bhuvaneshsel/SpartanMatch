@@ -33,13 +33,13 @@ function UploadResume() {
         )
         setIsError(false)
         setErrorMessage("")
-        
+
         const path = "/upload-job-description"
         navigate(path)
       }
       catch (error) {
         setIsError(true)
-        setErrorMessage(error?.response?.data?.message)
+        setErrorMessage(error?.response?.data?.error)
       }
     }
 
