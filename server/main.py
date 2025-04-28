@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, send_file,  make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -7,9 +7,13 @@ import json
 import os
 import io
 import PyPDF2
+import uuid
+import traceback
+
+
 
 app = Flask(__name__)
-cors = CORS(app, origin='*')
+cors = CORS(app, origin='*', supports_credentials=True)
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -64,27 +68,28 @@ def extract_text(file_stream, filename):
 @app.route("/api/upload-resume", methods=["POST"])
 def upload_resume():
     if "Resume" not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+        return jsonify({"message": "No file uploaded"}), 400
 
     resume_file = request.files["Resume"]
-    session_id = request.form.get("session_id")  
+    session_id = request.cookies.get("session_id")
 
     if not session_id:
-        return jsonify({"error": "Missing session_id"}), 400
+        session_id = str(uuid.uuid4())
 
     if resume_file.filename == "":
-        return jsonify({"error": "No file selected"}), 400
+        return jsonify({"message": "No file selected"}), 400
 
     if not resume_file.filename.lower().endswith('.pdf'):
-        return jsonify({"error": "Only PDF files are supported"}), 400
+        return jsonify({"message": "Only PDF files are supported"}), 400
 
     try:
-        
         extracted_text = extract_text(resume_file.stream, resume_file.filename)
+        if len(extracted_text.split()) < 100:
+            return jsonify({"message": "Resume must be at least 100 words long"}), 400
         
         resume_file.stream.seek(0)
         pdf_content = resume_file.stream.read()
-
+    
         connection = get_db_connection()
         cursor = connection.cursor()
 
@@ -93,16 +98,30 @@ def upload_resume():
             (session_id, extracted_text, psycopg2.Binary(pdf_content))
         )
 
+        cursor.execute("""
+            DELETE FROM scores
+            WHERE session_id = %s;
+        """, (session_id,))
+
+        cursor.execute("""
+            DELETE FROM resume_improvements
+            WHERE session_id = %s;
+        """, (session_id,))
+
         connection.commit()
         cursor.close()
         connection.close()
 
-        return jsonify({"message": "Resume uploaded and saved successfully"}), 200
-
+        response = make_response({"message": "Resume uploaded and saved successfully"})
+        response.set_cookie("session_id", session_id)
+        return response, 200
+    
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        traceback.print_exc()
+        return jsonify({"message": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": f"An error occurred: {e}"}), 500
+        traceback.print_exc()
+        return jsonify({"message": f"An error occurred: {e}"}), 500
 
 @app.route("/api/upload-job-description", methods=['POST'])
 def upload_job_description():

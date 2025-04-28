@@ -11,27 +11,27 @@ connection = psycopg2.connect(host="localhost", dbname="postgres", user="postgre
 cursor = connection.cursor()
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS resumes (
-    session_id INT PRIMARY KEY,
-    resume_name VARCHAR(255),
-    resume_data BYTEA,
-    resume_text TEXT
+    session_id TEXT PRIMARY KEY,
+    resume_text TEXT,
+    resume_data BYTEA
+   
 );
 """)
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS job_description (
-    session_id INT PRIMARY KEY,
+    session_id TEXT PRIMARY KEY,
     job_description TEXT
 );
 """)
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS scores (
-    session_id INT PRIMARY KEY,
+    session_id TEXT PRIMARY KEY,
     resume_scores JSON
 );
 """)
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS resume_improvements (
-    session_id INT PRIMARY KEY,
+    session_id TEXT PRIMARY KEY,
     improvements JSON
 );
 """)

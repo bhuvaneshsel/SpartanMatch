@@ -8,30 +8,39 @@ import axios from "axios"
 
 function UploadResume() {
 
-    const [resumeFile, setResumeFile] = useState(null)
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
+    const [isError, setIsError] = useState(false)
+    const [errorMessage, setErrorMessage] = useState("")
 
 
     const onFileChange = (event) => {
-        setResumeFile(event.target.files[0])
-        
-        /*const rresumeFile = event.target.files[0]
-
-
-        if (rresumeFile) {
-          if (rresumeFile.type === 'application/pdf') {
-            let path = "/upload-job-description"
-            navigate(path)
-          }
-        }*/
+        uploadFile(event.target.files[0])
+        event.target.value = null
     }
 
-    const onFileUpload = async () => {
-        const formData = new FormData();
-        formData.append("Resume", resumeFile, resumeFile.name)
-        const response = await axios.post("http://localhost:8080/api/upload-resume", formData)
-        console.log(response)
+    const uploadFile = async (file) => {
+      if (!file) {
+        return;
+      }
+      const formData = new FormData();
+      formData.append("Resume", file, file.name)
+
+      try {
+        const response = await axios.post("http://localhost:8080/api/upload-resume", 
+          formData,
+          { withCredentials: true } //sends cookies to backend
+        )
+        setIsError(false)
+        setErrorMessage("")
+        
+        const path = "/upload-job-description"
+        navigate(path)
+      }
+      catch (error) {
+        setIsError(true)
+        setErrorMessage(error?.response?.data?.message)
+      }
     }
 
     const handleButtonClick = () => {
@@ -42,7 +51,7 @@ function UploadResume() {
 
   return (
     <>
-      { <div className="upload-resume-container">
+       <div className="upload-resume-container">
           <header className='upload-resume-header-container'>
             <img className="home-page-logo" src={logo} alt="Logo"/>
             <div className="upload-resume-header">
@@ -56,7 +65,8 @@ function UploadResume() {
               <h2 className='upload-resume-description'>Get started by uploading your resume</h2>
               <img className="upload-image" src={uploadImage} alt="UploadImage"/>
 
-              <button onClick={handleButtonClick} className='upload-resume-button'>Upload
+              <button onClick={handleButtonClick} className='upload-resume-button'>
+                Upload
               </button>
 
               <input
@@ -70,7 +80,8 @@ function UploadResume() {
               <h3 className='upload-resume-file-type-description'>File Type: PDF Only</h3>
               </div>
             </div>
-        </div> }
+            <p className="error-message">{errorMessage}</p>
+        </div> 
     </>
   )
 }
