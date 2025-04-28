@@ -68,7 +68,7 @@ def extract_text(file_stream, filename):
 @app.route("/api/upload-resume", methods=["POST"])
 def upload_resume():
     if "Resume" not in request.files:
-        return jsonify({"message": "No file uploaded"}), 400
+        return jsonify({"error": "No file uploaded"}), 400
 
     resume_file = request.files["Resume"]
     session_id = request.cookies.get("session_id")
@@ -77,15 +77,15 @@ def upload_resume():
         session_id = str(uuid.uuid4())
 
     if resume_file.filename == "":
-        return jsonify({"message": "No file selected"}), 400
+        return jsonify({"error": "No file selected"}), 400
 
     if not resume_file.filename.lower().endswith('.pdf'):
-        return jsonify({"message": "Only PDF files are supported"}), 400
+        return jsonify({"error": "Only PDF files are supported"}), 400
 
     try:
         extracted_text = extract_text(resume_file.stream, resume_file.filename)
         if len(extracted_text.split()) < 100:
-            return jsonify({"message": "Resume must be at least 100 words long"}), 400
+            return jsonify({"error": "Resume must be at least 100 words long"}), 400
         
         resume_file.stream.seek(0)
         pdf_content = resume_file.stream.read()
@@ -118,15 +118,15 @@ def upload_resume():
     
     except ValueError as e:
         traceback.print_exc()
-        return jsonify({"message": str(e)}), 400
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"message": f"An error occurred: {e}"}), 500
+        return jsonify({"error": f"An error occurred: {e}"}), 500
 
 @app.route("/api/upload-job-description", methods=['POST'])
 def upload_job_description():
-    session_id = 1 #hard coded for now should get session ID from cookie
-
+    session_id = request.cookies.get("session_id")
+    
     connection = get_db_connection()
     cursor = connection.cursor()
     
@@ -134,7 +134,7 @@ def upload_job_description():
     cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
     resume_text = cursor.fetchone()
     if not (resume_text):
-        return jsonify({"error": f"No resume found for session_id {session_id}."}), 500
+        return jsonify({"error": f"No resume found. Please upload a resume first"}), 500
     else:
         data = request.get_json()
         job_description = data.get("job_description")
@@ -162,35 +162,13 @@ def upload_job_description():
         cursor.close()
         connection.close()
 
-        return "Success!"
+        return jsonify({"message": "Job description successfully saved"}), 200
 
-#IDK when this was added, I think it can be deleted?
-# @app.route("/api/resume-score", methods = ['GET'])
-# def calculate_score():
-#     data = request.get_json()
-#     session_id = data.get("session_id")
-    
-#     if not job_description:
-#         return jsonify({"error": "job_description"}), 400
-    
-    
-#     connection = get_db_connection()
-#     cursor = connection.cursor()
-        
-#     cursor.execute(
-#             "INSERT INTO job_description (session_id, job_description) VALUES (%s, %s) ON CONFLICT (session_id) DO UPDATE SET job_description = EXCLUDED.job_description",
-#             (session_id, job_description)
-#     )
-        
-#     connection.commit()
-#     cursor.close()
-#     connection.close()
-        
-#     return jsonify({"message": "Job description saved successfully"}), 200
     
 @app.route("/api/get-resume", methods=['GET'])
 def get_resume():
-    session_id = request.args.get("session_id", 1)
+    session_id = request.cookies.get("session_id")
+
     connection = get_db_connection()
     cursor = connection.cursor()
 
@@ -206,7 +184,7 @@ def get_resume():
 @app.route("/api/resume-score", methods=['GET'])
 def calculate_score():
     data = request.get_json()
-    session_id = data.get("session_id", 1)  
+    session_id = request.cookies.get("session_id")
 
     connection = get_db_connection()
     cursor = connection.cursor()
@@ -288,11 +266,11 @@ def calculate_score():
         cursor.close()
         connection.close()
 
-        return jsonify(json_response)
+        return jsonify(json_response), 200
 
 @app.route("/api/resume-improvements", methods=['GET'])
 def resume_improvements():
-    session_id = request.args.get("session_id", 1)  
+    session_id = request.cookies.get("session_id")
 
     connection = get_db_connection()
     cursor = connection.cursor()
@@ -366,7 +344,7 @@ def resume_improvements():
         cursor.close()
         connection.close()
     
-        return jsonify(json_response)
+        return jsonify(json_response), 200
 
 @app.route("/api/extract-text", methods=["POST"])
 def extract_text_endpoint():
