@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import "./UploadResume.css";
-import logo from "./logo.png"
-import uploadImage from "./upload.png"
+import logo from "../../../public/logo.png"
+import uploadImage from "../../../public/upload.png"
 import axios from "axios"
 
 
@@ -43,16 +43,13 @@ function UploadResume() {
   return (
     <>
       { <div className="upload-resume-container">
-          <div className='upload-resume-header-container'>
+          <header className='upload-resume-header-container'>
             <img className="home-page-logo" src={logo} alt="Logo"/>
-
-            <header className="upload-resume-header">
+            <div className="upload-resume-header">
               <h1>SpartanMatch</h1>
-            </header>
-            <header className="upload-resume-subheader">
               <h2>Advanced ATS Resume Checker</h2>
-            </header>
-          </div>
+            </div>
+          </header>
 
           <div className="background-rectangle">
             <div className='upload-resume-content-container'>

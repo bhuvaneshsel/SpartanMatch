@@ -1,6 +1,7 @@
 .upload-resume-container {
     display: flex;
     height: 100vh;
+    min-width: 500px;
     background-color: #E5A823;
     justify-content: center;
     align-items: center;
@@ -11,48 +12,39 @@
     display: flex;
     flex-direction: row;
     justify-content: center;
+    align-items: center;
+    width: 100%;
     min-height: 250px;
 }
 
 .home-page-logo {
-    position: absolute;
-    width: 19vw;
-    max-width: 400px;
-    height: auto;
-    top: 0vh;
-    left: 17vw;
+    width: 300px;
 }
 
 .upload-resume-header { 
-    position: absolute;
-    top: 7vh;
-    left: 50%;
-    transform: translateX(-50%);
     text-align: center;
-    margin: 0;
+    margin-right: 13vw;
     letter-spacing: 3px;
     color: #0055A2;
     text-shadow:  3px 3px 5px rgba(0, 0, 0, 0.3); 
-    font-size: 2.5vw;
+    font-size: 2.3rem;
     font-weight: bold;
     font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
 }
 
 .upload-resume-header h1 {
     padding: 0;
+    margin: 0;
+    padding: 0;
 }
 
-.upload-resume-subheader { 
-    position: absolute;
-    top: 22vh;
-    left: 50%;
-    transform: translateX(-50%);
+.upload-resume-header h2 { 
     text-align: center;
     margin: 0;
     color: #0055A2;
     letter-spacing: 1px;
     text-shadow:  3px 3px 5px rgba(0, 0, 0, 0.3); 
-    font-size: 1vw;
+    font-size: 1.5rem;
     font-weight: bold;
     font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
@@ -83,7 +75,7 @@
 .upload-resume-description {
     text-align: center;
     color: black;
-    font-size: 1.8vw;
+    font-size: 2rem;
     font-family:'Times New Roman', Times, serif;
     margin-top: 50px;
 }
@@ -91,6 +83,7 @@
 .upload-image {
     margin-top: 50px;
     width: 5vw;
+    min-width:50px;
     max-width: 100px;
     margin-bottom: 1vh;
 }
@@ -111,6 +104,34 @@
     margin-top: 0vh;
     text-align: center;
     color: black;
-    font-size: 1vw;
+    font-size: 1rem;
     font-family:'Times New Roman', Times, serif
+}
+
+@media (max-width: 800px) {
+    .upload-resume-header-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        min-height: 250px;
+    }
+
+    .upload-resume-header { 
+        text-align: center;
+        margin-right: 0;
+        letter-spacing: 3px;
+        color: #0055A2;
+        text-shadow:  3px 3px 5px rgba(0, 0, 0, 0.3); 
+        font-size: 2.3rem;
+        font-weight: bold;
+        font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    }
+    
+    .home-page-logo {
+        width: 250px;
+        margin-bottom: -50px;
+    }
+    
 }

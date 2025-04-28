@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import {createBrowserRouter, RouterProvider} from "react-router-dom"
-import UploadResume from './UploadResume.tsx'
+import UploadResume from './components/UploadResume/UploadResume.tsx'
 import UploadJobDescription from './UploadJobDescription.tsx'
 import ResumeScore from './ResumeScore.tsx'
 import ResumeImprovements from './components/ResumeImprovements/ResumeImprovements.tsx'
