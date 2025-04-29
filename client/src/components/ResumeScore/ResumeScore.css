@@ -8,15 +8,11 @@
 }
 
 .resume-score-header { 
-    position: absolute;
-    top: 5vh;
-    left: 50%;
-    transform: translateX(-50%);
     text-align: center;
     margin: 0;
     color: #0055A2;
     text-shadow:  3px 3px 5px rgba(0, 0, 0, 0.3); 
-    font-size: 1.5vw;
+    font-size: 1.5rem;
     font-weight: bold;
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
 }
@@ -29,8 +25,8 @@
     margin-top: 20vh;
     display: flex;
     flex-direction: row;
-    justify-content: center;
-    gap: 10vw;
+    justify-content: space-between;
+    gap: 50px;
 }
 
 
@@ -44,7 +40,7 @@
 .category-label {
     text-align: center;
     color: black;
-    font-size: 2.2vw;
+    font-size: 2.2rem;
     font-family:'Times New Roman', Times, serif;
     font-weight: bold;
 }
@@ -57,14 +53,14 @@
 .subcategory-label {
     text-align: center;
     color: black;
-    font-size: 1.25vw;
+    font-size: 1.25rem;
     font-family:'Times New Roman', Times, serif;
     font-weight: 500;
 }
 
 
 .scores-background-rectangle {
-    width: 15vw;
+    width: 20vw;
     height: 62vh;
     border-radius: 20px;
     border: 1px solid black;
@@ -85,4 +81,13 @@
     border-radius: 50px;
     cursor: pointer;
     padding: 1vw;
+}
+
+@media (max-width: 800px) {
+    .resume-score-display-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 50px;
+    }
 }

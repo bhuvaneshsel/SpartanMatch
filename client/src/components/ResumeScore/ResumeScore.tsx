@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import "./ResumeScore.css";
 import "./ScoresProgressCircle.css"
-import logo from "./logo.png"
+import logo from "../../../public/logo.png"
 import ScoresProgressCircle from './ScoresProgressCircle';
 import { useNavigate } from 'react-router-dom';
 

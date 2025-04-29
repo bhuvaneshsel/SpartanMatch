@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import "./UploadJobDescription.css";
-import logo from "./logo.png"
+import logo from "../../../public/logo.png"
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
