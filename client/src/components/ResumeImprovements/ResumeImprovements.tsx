@@ -4,6 +4,8 @@ import logo from "../../../public/logo.png"
 import axios from 'axios';
 import {pdfjs } from "react-pdf";
 import { Document, Page } from 'react-pdf';
+import { useNavigate } from 'react-router-dom';
+
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -16,7 +18,7 @@ import { Sidebar } from "./Sidebar";
 
 
 export default function ResumeImprovements() {
-
+  const navigate = useNavigate();
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState<number>(1);
 
@@ -28,69 +30,65 @@ export default function ResumeImprovements() {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [improvements, setImprovements] = useState([])
+  const [isError, setIsError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
 
 
   const fetchImprovements = async () => {
     setIsLoading(true)
-    const fullText = getResumeText();
-    const response = await axios.post("http://localhost:8080/api/resume-improvements", 
-      { fullText: fullText },
-      { withCredentials: true }
-    )
-    console.log(response.data)
-    setImprovements(response.data);
-    setIsLoading(false)
+    try {
+      const response = await axios.get("http://localhost:8080/api/resume-improvements", 
+        { withCredentials: true }
+      );
+      setImprovements(response.data);
+      setIsLoading(false)
+    }
+    catch (error) {
+      setIsError(true)
+      setErrorMessage(error?.response?.data?.error)
+      setIsLoading(false)
+    }
+    
   }
 
   const fetchResume = async() => {
     setIsLoading(true)
-    const response = await axios.get("http://localhost:8080/api/get-resume", {
-      responseType: "blob",
-      withCredentials: true,
-    });
-
-    const blob = response.data;
-    const url = URL.createObjectURL(blob);
-    setUrl(url)
+    try {
+      const response = await axios.get("http://localhost:8080/api/get-resume", {
+        responseType: "blob",
+        withCredentials: true,
+      });
+  
+      const blob = response.data;
+      const url = URL.createObjectURL(blob);
+      setUrl(url)
+      return true;
+    }
+    catch (error) {
+      setIsError(true)
+      setErrorMessage("Resume not found. Please upload a resume and job description first.")
+      setIsLoading(false)
+      return false;
+    }
   }
 
   useEffect(() => {
-
-    const loadResume = async () => {
-      await fetchResume();
+    const loadImprovements = async () => {
+      const isSuccess = await fetchResume();
+      if (isSuccess) {
+        await fetchImprovements()
+      }
     };
-    loadResume();
-
-    const findTextHighlights = () => {
-      fetchImprovements();
-    }
-    const timeout = setTimeout(findTextHighlights, 3000);
-    return () => clearTimeout(timeout);
-   
+   loadImprovements()
   }, []);
 
-  
-  const getResumeText = () => {
-    const spanElements = Array.from(document.querySelectorAll(".textLayer span[role='presentation']"));
-
-    let fullText = "";
-    const spanIndexArray = spanElements.map((span) => {
-      const text = span.textContent || "";
-      const startIndex = fullText.length;
-      fullText += (fullText && text ? " " : "") + text; 
-      const endIndex = fullText.length;
-      return {span, startIndex, endIndex}
-    })
-    return fullText;
-
-  }
   return (
     <>
       <header className="resume-improvements-header">
-        <img className="logo" src={logo} alt="Logo"/>
+        <img className="logo" src={logo} alt="Logo" onClick={() => navigate("/")}/>
         <h1>Resume Improvements</h1>
       </header>
-      {!isLoading && (
+      {!isLoading && !isError && (
         <>
           <div className="resume-improvements-container">
             <Sidebar improvements={improvements}/>
@@ -99,16 +97,21 @@ export default function ResumeImprovements() {
             </Document>
           </div> 
           <div className="nav-buttons">
-            <button>Go Back</button>
-            <button>Start New Analysis</button>
+            <button onClick={() => navigate("/resume-score")}>Go Back</button>
+            <button onClick={() => navigate("/")}>Start New Analysis</button>
           </div>
-       
         </>
       )}
-      {isLoading && (
+      {isLoading && !isError && (
         <div className="loading-container">
           <img src="../../../public/Loading.gif"></img>
           <p>Loading Resume Improvements...</p>
+        </div>
+      )}
+      {isError && (
+        <div className="error-container">
+          <h1>Error</h1>
+          <p>{errorMessage}</p>
         </div>
       )}
     </>

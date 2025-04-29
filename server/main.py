@@ -134,7 +134,7 @@ def upload_job_description():
     cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
     resume_text = cursor.fetchone()
     if not (resume_text):
-        return jsonify({"error": f"No resume found. Please upload a resume first"}), 500
+        return jsonify({"error": f"No resume found. Please upload a resume first"}), 400
     else:
         data = request.get_json()
         job_description = data.get("job_description")
@@ -175,12 +175,14 @@ def get_resume():
 
     cursor.execute("SELECT resume_data FROM resumes WHERE session_id = %s", (session_id,))
     resume = cursor.fetchone()
+    if not (resume):
+        return jsonify({"error": f"No resume found. Please upload a resume first"}), 400
     return send_file(
         io.BytesIO(resume[0]),
         mimetype="application/pdf",
         as_attachment=False,
         download_name="resume.pdf"
-    )
+    ), 200
 
 @app.route("/api/resume-score", methods=['GET'])
 def calculate_score():
@@ -269,7 +271,7 @@ def calculate_score():
 
         return jsonify(json_response), 200
 
-@app.route("/api/resume-improvements", methods=['POST'])
+@app.route("/api/resume-improvements", methods=['GET'])
 def resume_improvements():
     session_id = request.cookies.get("session_id")
 
