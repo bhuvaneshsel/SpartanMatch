@@ -188,7 +188,6 @@ def get_resume():
 
 @app.route("/api/resume-score", methods=['GET'])
 def calculate_score():
-    data = request.get_json()
     session_id = request.cookies.get("session_id")
 
     connection = get_db_connection()
@@ -200,7 +199,7 @@ def calculate_score():
     if scores:
         cursor.close()
         connection.close()
-        return jsonify(json.loads(scores[0]))
+        return jsonify(scores[0])
     else:
         context = """
         You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
@@ -240,7 +239,7 @@ def calculate_score():
         if not job_desc_result:
             cursor.close()
             connection.close()
-            return jsonify({"error": "Job description not found"}), 404
+            return jsonify({"error": "Job description not found. Please upload a resume and job description first"}), 404
         job_description = job_desc_result[0]
 
         cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
@@ -248,7 +247,7 @@ def calculate_score():
         if not resume_result:
             cursor.close()
             connection.close()
-            return jsonify({"error": "Resume not found"}), 404
+            return jsonify({"error": "Resume not found. Please upload a resume and job description first"}), 404
         resume = resume_result[0]
 
         prompt = f"""
@@ -319,7 +318,7 @@ def resume_improvements():
         if not job_desc_result:
             cursor.close()
             connection.close()
-            return jsonify({"error": "Job description not found"}), 404
+            return jsonify({"error": "Job description not found. Please upload a resume and job description first"}), 404
         job_description = job_desc_result[0]
 
         cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
@@ -327,7 +326,7 @@ def resume_improvements():
         if not resume_result:
             cursor.close()
             connection.close()
-            return jsonify({"error": "Resume not found"}), 404
+            return jsonify({"error": "Resume not found. Please upload a resume and job description first"}), 404
         resume = resume_result[0]
 
         prompt = f"""

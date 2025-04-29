@@ -4,9 +4,15 @@ import "./ScoresProgressCircle.css"
 import logo from "../../../public/logo.png"
 import ScoresProgressCircle from './ScoresProgressCircle';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
 
 
 function ResumeScore() {
+  const [scores, setScores] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
     const routeChange = () =>{
@@ -14,30 +20,41 @@ function ResumeScore() {
         navigate(path)
     }
 
-    const subcategories = [
-      { name: 'Work Experience', passed: true },
-      { name: 'Education', passed: true },
-      { name: 'Soft Skills', passed: true },
-      { name: 'Technical Skills', passed: false },
-      { name: 'Spelling & Grammer', passed: true },
-      { name: 'Repetition', passed: true },
-      { name: 'Format', passed: false },
-      { name: 'Readability', passed: false },
-      { name: 'Keyword Usage', passed: false },
-    ];
+    const fetchScores = async () => {
+      setIsLoading(true)
+      try {
+        const response = await axios.get("http://localhost:8080/api/resume-score", 
+          { withCredentials: true }
+        );
+        console.log(response.data)
+        console.log(response.data.experience_score)
+        setScores(response.data);
+        setIsError(false)
+        setIsLoading(false)
+      }
+      catch (error) {
+        setIsError(true)
+        setErrorMessage(error?.response?.data?.error)
+        setIsLoading(false)
+      }
+    }
+
+    useEffect(() => {
+      setIsLoading(true)
+      fetchScores()
+    }, []);
  
   return (
     <>
-      { <div className="resume-score-container">
+       <div className="resume-score-container">
             <div className='resume-score-container'>
-                <img className="logo" src={logo} alt="Logo"/>
-
+                <img className="logo" src={logo} alt="Logo" onClick={() => navigate("/")}/>
                 <header className="resume-score-header">
                     <h1>Resume Analysis Results</h1>
                 </header>
             </div>
 
-            <div className='resume-score-display-container'>
+           {!isLoading && !isError && (<div className='resume-score-display-container'>
               <div className="scores-background-rectangle">
                 <div className='resume-score-category-container'>
                   <h2 className='category-label'>Experience</h2>
@@ -47,17 +64,20 @@ function ResumeScore() {
                       cx="80"
                       cy="80"
                       strokeWidth="7"
-                      progress={100}
+                      progress={scores.experience_score}
                       />
                     </div>
 
-                  {subcategories
-                    .filter(sub => sub.name === 'Work Experience' || sub.name === 'Education')
-                    .map((sub, index) => (
-                      <h2 key={index} className='subcategory-label'>
-                        {sub.passed ? '✅' : '❌'} {sub.name}
+                    {scores.experience_positives?.map((category, index) => (
+                      <h2 key = {index} className="subcategory-label">
+                        ✅{category}
                       </h2>
-                  ))}
+                    ))}
+                    {scores.experience_negatives?.map((category, index) => (
+                      <h2 key = {index} className="subcategory-label">
+                        ❌{category}
+                      </h2>
+                    ))}
                 </div>
               </div>
 
@@ -70,14 +90,17 @@ function ResumeScore() {
                       cx="80"
                       cy="80"
                       strokeWidth="7"
-                      progress={80}
+                      progress={scores.skills_score}
                       />
                     </div>
-                    {subcategories
-                    .filter(sub => sub.name === 'Soft Skills' || sub.name === 'Technical Skills')
-                    .map((sub, index) => (
-                      <h2 key={index} className='subcategory-label'>
-                        {sub.passed ? '✅' : '❌'} {sub.name}
+                    {scores.skills_positives?.map((category, index) => (
+                      <h2 key = {index} className="subcategory-label">
+                        ✅{category}
+                      </h2>
+                    ))}
+                    {scores.skills_negatives?.map((category, index) => (
+                      <h2 key = {index} className="subcategory-label">
+                        ❌{category}
                       </h2>
                     ))}
                   </div>
@@ -92,26 +115,42 @@ function ResumeScore() {
                       cx="80"
                       cy="80"
                       strokeWidth="7"
-                      progress={50}
+                      progress={scores.structure_score}
                       />
                     </div>
-                    {subcategories
-                    .filter(sub => sub.name === 'Spelling & Grammer' || sub.name === 'Repetition' || sub.name === 'Format'
-                      || sub.name === 'Readability' || sub.name === 'Keyword Usage')
-                    .map((sub, index) => (
-                      <h2 key={index} className='subcategory-label'>
-                        {sub.passed ? '✅' : '❌'} {sub.name}
+                    {scores.structure_positives?.map((category, index) => (
+                      <h2 key = {index} className="subcategory-label">
+                        ✅{category}
+                      </h2>
+                    ))}
+                    {scores.structure_negatives?.map((category, index) => (
+                      <h2 key = {index} className="subcategory-label">
+                        ❌{category}
                       </h2>
                     ))}
                   </div>
                 </div>
-            </div>
+            </div> )}
+         {!isLoading && !isError && (
           <button className={`improve-resume-button`}
             onClick={routeChange}
             >Improve Resume
           </button>
+         )} 
+          {isLoading && !isError && (
+            <div className="loading-container">
+              <img src="../../../public/Loading.gif"></img>
+              <p>Loading Resume Scores...</p>
+            </div>
+          )}
+          {isError && (
+          <div className="error-container">
+            <h1>Error</h1>
+            <p>{errorMessage}</p>
+          </div>
+          )}
         </div> 
-        }
+        
     </>
   )
 }

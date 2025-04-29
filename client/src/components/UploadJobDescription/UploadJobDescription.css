@@ -1,10 +1,10 @@
 .upload-job-description-container {
     display: flex;
-    height: 100vh;
     background-color: #E5A823;
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    gap: 50px;
 }
 
 .upload-job-description-header-container {
@@ -21,18 +21,32 @@
     height: auto;
     top: 1vh;
     left: 1vw;
+    cursor: pointer;
+}
+
+.error-container {
+    background-color: white;
+    width: 500px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 20px;
+    max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 100px;
+    gap: 20px;
 }
 
 .upload-job-description-header { 
-    position: absolute;
-    top: 5vh;
-    left: 50%;
-    transform: translateX(-50%);
     text-align: center;
     margin: 0;
+    padding: 0;
     color: #0055A2;
     text-shadow:  3px 3px 5px rgba(0, 0, 0, 0.3); 
-    font-size: 1.5vw;
+    font-size: 1.5rem;
     font-weight: bold;
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
 }
@@ -55,27 +69,27 @@
     width: 50vw;
     height: 40vh;
     padding: 1rem;
-    font-size: 1vw;
+    font-size: 1rem;
     border: none;
     border-radius: 20px;
     box-shadow: 0 0 10px rgba(0,0,0,0.2);
 } 
 
 .word-count {
-    font-size: 20px;
+    font-size: 1.5rem;
     color: #555;
     margin-bottom: 70px;
 }
 
 .upload-job-description-button {
-    width: 10vw;
+    width: 200px;
     font-size: 1rem;
     background-color: #0055A2;
     color: white;
     border: none;
     border-radius: 50px;
     cursor: pointer;
-    padding: 1vw;
+    padding: 1rem;
 }
 
 .upload-job-description-button.disabled {
@@ -85,4 +99,19 @@
 
 .upload-job-description-button:enabled:hover {
     background-color: #0055A2;
+}
+
+@media (max-width: 850px) {
+    .upload-job-description-header { 
+        max-width: 400px;
+        margin-left: 100px;
+        text-align: center;
+        padding: 0;
+        color: #0055A2;
+        text-shadow:  3px 3px 5px rgba(0, 0, 0, 0.3); 
+        font-size: 1.5rem;
+        font-weight: bold;
+        font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    }
+
 }

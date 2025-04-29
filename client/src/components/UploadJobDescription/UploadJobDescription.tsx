@@ -12,7 +12,7 @@ function UploadJobDescription() {
     const [wordCount, setWordCount] = useState(0);  
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState(false);
-    const {erroeMessage, setErrorMessage} = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
     const navigate = useNavigate();
 
     const input = document.querySelector(".upload-job-description-textbox");
@@ -31,55 +31,73 @@ function UploadJobDescription() {
       };
       const buttonDisabled = wordCount < 100;
 
-    
-
-
-
-
-
-
-   
-    
     const uploadJobDesc = async () => {
       try {
         setIsLoading(true)
-        console.log(input.value)
         const response = await axios.post('http://localhost:8080/api/upload-job-description', {
           job_description: input.value,
         }, {
-          withCredentials: true  // This is important to send cookies with the request
+          withCredentials: true  
         });
-        
-        // Handle the response from the backend
         if (response.status === 200) {
-            setJobDescription(''); // Clear the input after successful save
+            setJobDescription(''); 
+            setIsLoading(false)
             routeChange();
         } else {
             setIsError(true);
             setErrorMessage('Failed to save job description.');
+            setIsLoading(false)
         }
       }
       catch (error) {
         console.error('Error saving job description:', error);
         setIsError(true);
         setErrorMessage('Error saving job description. Please try again.');
+        setIsLoading(false)
       } finally {
         setIsLoading(false);
       }
     };
 
+    const fetchResume = async() => {
+      setIsLoading(true)
+      try {
+        const response = await axios.get("http://localhost:8080/api/get-resume", {
+          responseType: "blob",
+          withCredentials: true,
+        });
+        setIsLoading(false)
+        setIsError(false)
+        return true;
+      }
+      catch (error) {
+        setIsError(true)
+        setErrorMessage("Resume not found. Please upload a resume first.")
+        setIsLoading(false)
+        return false;
+      }
+    }
+
+    useEffect(() => {
+      const checkForResume = async () => {
+        const isSuccess = await fetchResume();
+      };
+      checkForResume();
+    }, []);
+
  
   return (
     <>
-        { <div className="upload-job-description-container">
+         <div className="upload-job-description-container">
             <div className='upload-job-description-header-container'>
-                <img className="logo" src={logo} alt="Logo"/>
+                <img className="logo" src={logo} alt="Logo" onClick={() => navigate("/")}/>
 
                 <header className="upload-job-description-header">
                     <h1>Upload Job Description</h1>
                 </header>
             </div>
 
+            {!isError && (
             <div className='upload-job-description-content-container'>
                 <textarea className = "upload-job-description-textbox" placeholder='Copy and paste the job description here (100 words minimum)...'
                     value={text}
@@ -91,7 +109,14 @@ function UploadJobDescription() {
                     >View Analysis
                 </button>
             </div>
-        </div> }
+            )}
+            {!isLoading && isError && (
+              <div className="error-container">
+                <h1>Error</h1>
+                <p>{errorMessage}</p>
+              </div>
+            )}
+        </div> 
     </>
   )
 }
