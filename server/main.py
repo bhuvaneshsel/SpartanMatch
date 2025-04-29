@@ -133,11 +133,13 @@ def upload_job_description():
     #Check if resume exists in table, if no resume return error
     cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
     resume_text = cursor.fetchone()
+    print(session_id)
     if not (resume_text):
         return jsonify({"error": f"No resume found. Please upload a resume first"}), 400
     else:
         data = request.get_json()
         job_description = data.get("job_description")
+        print(job_description)
 
         #Insert job_description into db with session_id. If a row shares this session_id replace its job_description
         cursor.execute("""

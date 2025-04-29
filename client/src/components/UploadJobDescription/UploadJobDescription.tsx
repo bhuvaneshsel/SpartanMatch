@@ -11,7 +11,11 @@ function UploadJobDescription() {
     const [text, setText] = useState('');  
     const [wordCount, setWordCount] = useState(0);  
     const [isLoading, setIsLoading] = useState(false);
+    const [isError, setIsError] = useState(false);
+    const {erroeMessage, setErrorMessage} = useState("");
     const navigate = useNavigate();
+
+    const input = document.querySelector(".upload-job-description-textbox");
 
     const routeChange = () =>{
         let path = "/resume-score"
@@ -34,54 +38,36 @@ function UploadJobDescription() {
 
 
 
-    // Fetching input from the textbox (Placeholder) --> From ChatGPT
-    //const [message, setMessage] = useState(''); --> would need this
+   
     
-    /*const fetchJobDesc = async () => {
+    const uploadJobDesc = async () => {
+      try {
         setIsLoading(true)
+        console.log(input.value)
         const response = await axios.post('http://localhost:8080/api/upload-job-description', {
-            description: jobDescription,
-          });
+          job_description: input.value,
+        }, {
+          withCredentials: true  // This is important to send cookies with the request
+        });
         
         // Handle the response from the backend
         if (response.status === 200) {
-            setMessage('Job description successfully saved!');
             setJobDescription(''); // Clear the input after successful save
+            routeChange();
         } else {
-            setMessage('Failed to save job description.');
+            setIsError(true);
+            setErrorMessage('Failed to save job description.');
         }
-        } catch (error) {
+      }
+      catch (error) {
         console.error('Error saving job description:', error);
-        setMessage('Error saving job description. Please try again.');
-        } finally {
+        setIsError(true);
+        setErrorMessage('Error saving job description. Please try again.');
+      } finally {
         setIsLoading(false);
-        }
-    }*/
+      }
+    };
 
-
-
-
-
-
-
-
-
-
-
-
-    
-    const uploadJobDescription = async () => {
-        const response = await axios.post(
-          "http://localhost:8080/api/upload-job-description",
-          { job_description: jobDescription }, 
-          {
-            headers: {
-              "Content-Type": "application/json"
-            }
-          }       
-        )
-        console.log(response)
-};
  
   return (
     <>
@@ -101,7 +87,7 @@ function UploadJobDescription() {
                 />
                 <div className="word-count">Word count: {wordCount}</div>
                 <button className={`upload-job-description-button ${buttonDisabled ? 'disabled' : ''}`} disabled={buttonDisabled}
-                    onClick={routeChange}
+                    onClick={uploadJobDesc}
                     >View Analysis
                 </button>
             </div>
