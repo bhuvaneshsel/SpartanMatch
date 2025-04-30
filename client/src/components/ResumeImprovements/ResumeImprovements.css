@@ -40,7 +40,7 @@
     background-color: white;
     border-radius: 5px;
     padding: 0px 10px;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     display:flex;
     align-items: center;
     gap: 20px;
@@ -103,6 +103,7 @@
     font-size: 1rem;
     border-radius: 50px;
     cursor: pointer;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
 .loading-container {
@@ -118,7 +119,7 @@
 }
 
 .loading-container p {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     font-size: 1.5rem;
     color: #0055A2;
 }
@@ -149,17 +150,27 @@
 }
 
 .error-container h1 {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     padding: 0;
     margin: 0;
 }
 
 .error-container p {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     text-align: center;
     font-size: 1.5rem;
     padding: 0;
     margin: 0;
+}
+
+.resume-display {
+    height: 80vh;
+    overflow-y: auto;
+}
+
+.pdf-page {
+    margin-bottom: 20px;
+    margin-right: 5px;
 }
 
 @media (max-width: 800px) {

@@ -92,9 +92,16 @@ export default function ResumeImprovements() {
         <>
           <div className="resume-improvements-container">
             <Sidebar improvements={improvements}/>
-            <Document file={url} onLoadSuccess={onDocumentLoadSuccess} >
-              <Page pageNumber={pageNumber} renderTextLayer={false} renderAnnotationLayer={false}/>
+            <div className="resume-display">
+              <Document file={url} onLoadSuccess={onDocumentLoadSuccess} >
+                {Array.apply(null, Array(numPages)).map((page, index) => index + 1 ).map((page) => {
+                  return (
+                    <Page pageNumber={page} renderTextLayer={false} renderAnnotationLayer={false} className="pdf-page"/>
+                  )
+                })}
             </Document>
+            </div>
+           
           </div> 
           <div className="nav-buttons">
             <button onClick={() => navigate("/resume-score")}>Go Back</button>
