@@ -50,7 +50,7 @@ function ResumeScore() {
             <div className='resume-score-container'>
                 <img className="logo" src={logo} alt="Logo" onClick={() => navigate("/")}/>
                 <header className="resume-score-header">
-                    <h1>Resume Analysis Results</h1>
+                    <h1>Resume Score</h1>
                 </header>
             </div>
 

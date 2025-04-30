@@ -203,7 +203,7 @@ def calculate_score():
     else:
         context = """
         You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
-        and a job description, in text form. You must analyze the resume based on the job descriptions.
+        and a job description, in text form. You must analyze the resume based on the job descriptions and ATS standards.
         Your analyses will return the following.
         experience_score (0-100): Based on work experience and education keywords
         skills_score (0-100): Based on soft skills and technical skills keywords
@@ -213,16 +213,16 @@ def calculate_score():
         Example Output:
         {
             "experience_score": 85,
-            "experience_positives": ["work experience"],
-            "experience_negatives": ["education"],
+            "experience_positives": ["Work Experience"],
+            "experience_negatives": ["Education"],
 
             "skills_score": 100,
-            "skills_positives": ["soft skills", "technical skills"],
+            "skills_positives": ["Soft Skills", "Technical Skills"],
             "skills_negatives": [],
 
             "structure_score": 75,
-            "structure_positives": ["spelling & grammar", "repetition", "format"],
-            "structure_negatives": ["readability", "keyword usage"]
+            "structure_positives": ["Spelling & Grammar", "Repetition", "Format"],
+            "structure_negatives": ["Readability", "Keyword Usage"]
         }
 
         General Guidelines:
@@ -291,7 +291,8 @@ def resume_improvements():
         context = """
         You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
         and also a job description, in text form. You must analyze the resume based on the job descriptions and suggest improvements
-        based on the job description, but also general resume improvements.
+        based on the job description, but also general resume improvements. When analyzing the resume, also analyze if the resume is optimized
+        for ATS.
 
         Respond in the following format:
         [
