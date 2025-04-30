@@ -1,6 +1,5 @@
 .upload-resume-container {
     display: flex;
-    height: 100vh;
     min-width: 500px;
     background-color: #E5A823;
     justify-content: center;
@@ -46,7 +45,7 @@
     text-shadow:  3px 3px 5px rgba(0, 0, 0, 0.3); 
     font-size: 1.5rem;
     font-weight: bold;
-    font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
 .upload-resume-header h2 {
@@ -68,7 +67,7 @@
     border-radius: 20px;
     border: 1px solid black;
     background-color: white;
-    margin-top: 100px;
+    margin-top: 50px;
     min-height: 300px;
 }
 
@@ -76,7 +75,7 @@
     text-align: center;
     color: black;
     font-size: 2rem;
-    font-family:'Times New Roman', Times, serif;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     margin-top: 50px;
 }
 
@@ -101,19 +100,32 @@
 }
 
 .upload-resume-file-type-description {
-    margin-top: 0vh;
     text-align: center;
     color: black;
     font-size: 1rem;
-    font-family:'Times New Roman', Times, serif
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
 .error-message {
     color: red;
     font-size:1.5rem;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
+.product-description {
+    text-align: center;
+    font-size: 2rem;
+    max-width: 50vw;
+    padding: 20px;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    padding: 0;
+    margin: 0;
+}
+
+.bold-blue {
+    color: #0055A2;
+    font-weight: bold;
+}
 @media (max-width: 800px) {
     .upload-resume-header-container {
         display: flex;
@@ -132,12 +144,35 @@
         text-shadow:  3px 3px 5px rgba(0, 0, 0, 0.3); 
         font-size: 2.3rem;
         font-weight: bold;
-        font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+        font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     }
     
     .home-page-logo {
         width: 250px;
         margin-bottom: -50px;
     }
+
+    .background-rectangle {
+        width: 50vw;
+        border-radius: 20px;
+        border: 1px solid black;
+        background-color: white;
+        min-height: 300px;
+    }
+
+    .upload-resume-container {
+        display: flex;
+        min-width: 500px;
+        background-color: #E5A823;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .product-description {
+        font-size: 1.2rem;
+        margin-top: 50px;
+    }
+
     
 }

@@ -59,7 +59,7 @@ function UploadResume() {
               <h2>Advanced ATS Resume Checker</h2>
             </div>
           </header>
-
+          <p className="product-description"><span className="bold-blue">SpartanMatch</span> is a robust resume analyzer that utlizes the <strong>power of AI</strong> to accurately analyze your resume and optimize it for <strong>ATS</strong>. We analyze your resume and <strong>match it with any job description</strong> you want, ensuring that your resume is optimized for that job.</p>
           <div className="background-rectangle">
             <div className='upload-resume-content-container'>
               <h2 className='upload-resume-description'>Get started by uploading your resume</h2>
