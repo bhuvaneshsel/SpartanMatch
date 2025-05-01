@@ -223,7 +223,7 @@ def calculate_score():
     else:
         context = """
         You are an AI expert resume analyzer that always responds in clean nested JSON format. The user will input a resume, in text form, 
-        and a job description, in text form. You must analyze the resume based on the job descriptions.
+        and a job description, in text form. You must analyze the resume based on the job descriptions and ATS standards.
         Your analyses will return the following.
         experience_score (0-100): Based on work experience and education keywords
         skills_score (0-100): Based on soft skills and technical skills keywords
