@@ -136,7 +136,6 @@ def upload_resume():
         response = make_response({"message": "Resume uploaded and saved successfully"})
         response.set_cookie("session_id", session_id)
         return response, 200
-    
     except ValueError as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 400
@@ -147,20 +146,17 @@ def upload_resume():
 @app.route("/api/upload-job-description", methods=['POST'])
 def upload_job_description():
     session_id = request.cookies.get("session_id")
-    
     connection = get_db_connection()
     cursor = connection.cursor()
     
     #Check if resume exists in table, if no resume return error
     cursor.execute("SELECT resume_text FROM resumes WHERE session_id = %s", (session_id,))
     resume_text = cursor.fetchone()
-    print(session_id)
     if not (resume_text):
         return jsonify({"error": f"No resume found. Please upload a resume first"}), 400
     else:
         data = request.get_json()
         job_description = data.get("job_description")
-        print(job_description)
 
         #Insert job_description into db with session_id. If a row shares this session_id replace its job_description
         cursor.execute("""
@@ -190,8 +186,6 @@ def upload_job_description():
 @app.route("/api/get-resume", methods=['GET'])
 def get_resume():
     session_id = request.cookies.get("session_id")
-    print(session_id)
-
     connection = get_db_connection()
     cursor = connection.cursor()
 
@@ -209,7 +203,6 @@ def get_resume():
 @app.route("/api/resume-score", methods=['GET'])
 def calculate_score():
     session_id = request.cookies.get("session_id")
-
     connection = get_db_connection()
     cursor = connection.cursor()
 
@@ -246,12 +239,14 @@ def calculate_score():
         }
 
         General Guidelines:
-        1. Use ONLY the following exact labels for positives/negatives:
-            - Experience: "work experience", "education"
-            - Skills: "soft skills", "technical skills"
-            - Structure: "spelling & grammar", "repetition", "format", "readability", "keyword usage"
+        1. Consider using the following labels for positives/negatives. You may use other labels as well.:
+            - Experience: "Work Experience", "Education"
+            - Skills: "Soft Skills", "Technical Skills"
+            - Structure: "Spelling & Grammar", "Repetition", "Format", "Readability", "Keyword Usage"
         2. Do not paraphrase or summarize - only use the exact category labels
         3. Only respond with the single JSON object, no additional comments, etc.
+        4. When calculating the score, take into account how many labels you have in the positive array and 
+        negative array. If there are no labels in the negative array, then the score should be 100 for that category.
         """
 
         cursor.execute("SELECT job_description FROM job_description WHERE session_id = %s", (session_id,))
@@ -268,6 +263,7 @@ def calculate_score():
             cursor.close()
             connection.close()
             return jsonify({"error": "Resume not found. Please upload a resume and job description first"}), 404
+        
         resume = resume_result[0]
 
         prompt = f"""
@@ -295,8 +291,6 @@ def calculate_score():
 @app.route("/api/resume-improvements", methods=['GET'])
 def resume_improvements():
     session_id = request.cookies.get("session_id")
-
-
     connection = get_db_connection()
     cursor = connection.cursor()
 
