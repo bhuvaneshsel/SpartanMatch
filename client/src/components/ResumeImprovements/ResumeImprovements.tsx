@@ -1,20 +1,19 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import "./ResumeImprovements.css";
 import logo from "../../../public/logo.png"
 import axios from 'axios';
 import {pdfjs } from "react-pdf";
 import { Document, Page } from 'react-pdf';
 import { useNavigate } from 'react-router-dom';
+import { Sidebar } from "./Sidebar";
 
 
 
+//configures pdfjs for react-pdf 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
 ).toString();
-
-import { Sidebar } from "./Sidebar";
-
 
 
 export default function ResumeImprovements() {
@@ -23,7 +22,7 @@ export default function ResumeImprovements() {
   const [pageNumber, setPageNumber] = useState<number>(1);
 
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
+  function onDocumentLoadSuccess({ numPages }) {
     setNumPages(numPages);
   }
 
@@ -89,37 +88,37 @@ export default function ResumeImprovements() {
         <h1>Resume Improvements</h1>
       </header>
       {!isLoading && !isError && (
-        <>
-          <div className="resume-improvements-container">
-            <Sidebar improvements={improvements}/>
-            <div className="resume-display">
-              <Document file={url} onLoadSuccess={onDocumentLoadSuccess} >
-                {Array.apply(null, Array(numPages)).map((page, index) => index + 1 ).map((page) => {
-                  return (
-                    <Page pageNumber={page} renderTextLayer={false} renderAnnotationLayer={false} className="pdf-page"/>
-                  )
-                })}
-            </Document>
-            </div>
-           
-          </div> 
-          <div className="nav-buttons">
-            <button onClick={() => navigate("/resume-score")}>Go Back</button>
-            <button onClick={() => navigate("/")}>Start New Analysis</button>
+      <>
+        <div className="resume-improvements-container">
+          <Sidebar improvements={improvements}/>
+          <div className="resume-display">
+            <Document file={url} onLoadSuccess={onDocumentLoadSuccess} >
+              {Array.apply(null, Array(numPages)).map((page, index) => index + 1 ).map((page) => {
+                return (
+                  <Page pageNumber={page} renderTextLayer={false} renderAnnotationLayer={false} className="pdf-page"/>
+                )
+              })}
+          </Document>
           </div>
-        </>
+          
+        </div> 
+        <div className="nav-buttons">
+          <button onClick={() => navigate("/resume-score")}>Go Back</button>
+          <button onClick={() => navigate("/")}>Start New Analysis</button>
+        </div>
+      </>
       )}
       {isLoading && !isError && (
-        <div className="loading-container">
-          <img src="../../../public/Loading.gif"></img>
-          <p>Loading Resume Improvements...</p>
-        </div>
+      <div className="loading-container">
+        <img src="../../../public/Loading.gif"></img>
+        <p>Loading Resume Improvements...</p>
+      </div>
       )}
       {isError && (
-        <div className="error-container">
-          <h1>Error</h1>
-          <p>{errorMessage}</p>
-        </div>
+      <div className="error-container">
+        <h1>Error</h1>
+        <p>{errorMessage}</p>
+      </div>
       )}
     </>
   );
